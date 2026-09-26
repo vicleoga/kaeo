@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 750" width="600" height="750">
+<defs>
+  <filter id="grain16" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+</defs>
+<rect width="600" height="750" fill="#E7DFD1"/>
+<defs>
+  <clipPath id="g13"><path d="M232 196 Q300 214 368 196 L356 330 Q430 450 470 672 Q300 700 130 672 Q170 450 244 330 Z"/></clipPath>
+  <linearGradient id="lg14" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.22"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.12"/></linearGradient>
+  <filter id="sh15" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#3a2f22" flood-opacity="0.18"/></filter>
+</defs>
+<path d="M232 196 Q300 214 368 196 L356 330 Q430 450 470 672 Q300 700 130 672 Q170 450 244 330 Z" fill="#F7F5EF" filter="url(#sh15)"/>
+<g clip-path="url(#g13)">
+  <path d="M244 330 Q300 344 356 330" stroke="#dddbd5" stroke-width="3" fill="none"/>
+<path d="M280 340 Q270 380 256 410 M296 342 Q300 385 290 420" stroke="#dddbd5" stroke-width="3" fill="none"/>
+<path d="M270 350 Q230 520 190 675 M300 350 L300 690 M330 350 Q370 520 410 680" stroke="#dddbd5" stroke-width="3" fill="none" opacity="0.5"/>
+<path d="M232 196 Q300 214 368 196" stroke="#dddbd5" stroke-width="4" fill="none"/>
+  <rect width="600" height="750" fill="url(#lg14)"/>
+</g>
+<rect width="600" height="750" filter="url(#grain16)" opacity="0.16" style="mix-blend-mode:multiply"/>
+<path d="M240 198 L252 90 M360 198 L348 90" stroke="#e1dfd9" stroke-width="5"/><path d="M252 90 L348 90" stroke="#8a7a62" stroke-width="3" opacity="0.6"/><path d="M300 90 L300 72" stroke="#8a7a62" stroke-width="3" opacity="0.6"/></svg>
