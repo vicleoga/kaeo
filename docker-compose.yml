@@ -1,6 +1,10 @@
 # Tienda KAEO: aplicación + PostgreSQL.
-#   cp .env.example .env   (y rellena las contraseñas)
-#   docker compose up -d --build
+#
+#   cp .env.example .env                                      (y rellena las contraseñas)
+#   docker compose up -d --build                              → aplica migraciones y arranca la web
+#   docker compose run --rm migrate npm run db:seed           → datos de prueba (catálogo de ejemplo)
+#   docker compose run --rm migrate npm run admin:create -- --email tu@correo.com
+#
 # En la fase 6 se añade Caddy delante (HTTPS) y las copias de seguridad.
 
 services:
@@ -14,10 +18,31 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
     ports:
       - "${APP_PORT:-3000}:3000"
+    volumes:
+      - uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
+
+  # Aplica las migraciones pendientes antes de que arranque la app, y termina.
+  # También sirve para tareas puntuales: docker compose run --rm migrate <comando>
+  migrate:
+    build:
+      context: .
+      target: build
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+    command: npx prisma migrate deploy
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
 
   db:
     image: postgres:16-alpine
@@ -36,3 +61,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:

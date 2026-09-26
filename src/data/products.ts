@@ -1,7 +1,7 @@
 // Catálogo inventado de KAEO.
 //
-// Fase 1: sigue siendo un fichero estático. En la fase 2 pasa a PostgreSQL y
-// este fichero se convierte en los datos de prueba del seed.
+// Desde la fase 2 el catálogo vive en PostgreSQL: este fichero solo son los datos
+// de prueba que carga prisma/seed.ts (y los usa el generador de ilustraciones).
 //
 // Las imágenes .jpg son recortes provisionales del moodboard (scripts/crop_moodboard.py).
 // Las prendas de las que aún no hay foto (lino, sudaderas, punto) usan una ilustración
@@ -200,5 +200,3 @@ export const PRODUCTS: Product[] = [
     alt: 'Pantalón ancho de lino color sage con cintura fruncida',
   },
 ]
-
-export const byCategory = (category: Category) => PRODUCTS.filter((p) => p.category === category)

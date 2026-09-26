@@ -5,6 +5,7 @@ import Palette from '@/components/Palette'
 import Gallery from '@/components/Gallery'
 import Newsletter from '@/components/Newsletter'
 import Reveal from '@/components/Reveal'
+import { listStoreProducts } from '@/server/catalog'
 
 function Quote({ lines }: { lines: string[] }) {
   return (
@@ -21,13 +22,19 @@ function Quote({ lines }: { lines: string[] }) {
   )
 }
 
-export default function HomePage() {
+export const dynamic = 'force-dynamic'
+
+export default async function HomePage() {
+  const products = await listStoreProducts({ homeOnly: true })
+  const byCategory = (c: 'hombre' | 'mujer') => products.filter((p) => p.category === c)
+
   return (
     <>
       <Hero />
       <Manifesto />
       <CategorySection
         id="hombre"
+        products={byCategory('hombre')}
         title="Hombre"
         kicker="Men · Summer 01"
         lines={['Good vibes', 'Good flow', 'Better days', 'Slow living']}
@@ -37,6 +44,7 @@ export default function HomePage() {
       <Quote lines={['Less hurry', 'More life']} />
       <CategorySection
         id="mujer"
+        products={byCategory('mujer')}
         title="Mujer"
         kicker="Women · Summer 01"
         lines={['Good people', 'Brighter days', 'A more human way forward']}

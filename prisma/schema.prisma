@@ -1,0 +1,187 @@
+// Esquema de la base de datos de KAEO.
+//
+// Convenciones:
+//   · Importes en céntimos (Int) y SIEMPRE con IVA incluido.
+//   · Tipos de IVA en puntos básicos (2100 = 21 %) para evitar decimales.
+//   · Fase 2: catálogo, administración y configuración. Los pedidos llegan en la fase 4.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────── Catálogo ───────────────────────────────
+
+enum Category {
+  HOMBRE
+  MUJER
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+}
+
+/// ON_DEMAND: impresión bajo demanda, sin límite de stock. OWN_STOCK: stock propio por variante.
+enum StockMode {
+  ON_DEMAND
+  OWN_STOCK
+}
+
+model Color {
+  id        String         @id @default(cuid())
+  /// Clave estable usada en el front (offwhite, sand…)
+  key       String         @unique
+  name      String
+  hex       String
+  /// Abreviatura para los SKU (OFW, SND…)
+  code      String         @unique
+  sortOrder Int            @default(0)
+  variants  Variant[]
+  images    ProductImage[]
+}
+
+model Product {
+  id             String        @id @default(cuid())
+  /// Código interno correlativo (KA0001), base de los SKU
+  code           String        @unique
+  slug           String        @unique
+  name           String
+  category       Category
+  status         ProductStatus @default(DRAFT)
+  stockMode      StockMode     @default(ON_DEMAND)
+  /// Precio base en céntimos, IVA incluido. Cada variante puede sobrescribirlo.
+  priceCents     Int
+  /// Tipo de IVA propio en puntos básicos; null = el general de la configuración
+  vatRateBp      Int?
+  description    String        @default("")
+  composition    String        @default("")
+  care           String        @default("")
+  /// Tallas del producto en su orden de presentación (dependen de la prenda del proveedor)
+  sizes          String[]
+  /// Guía de tallas: { columns: string[], rows: string[][] }
+  sizeGuide      Json?
+  /// Referencia del producto en el proveedor de producción bajo demanda (fase 4)
+  providerRef    String?
+  seoTitle       String?
+  seoDescription String?
+  /// Aparece en la portada
+  showOnHome     Boolean       @default(true)
+  sortOrder      Int           @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  variants       Variant[]
+  images         ProductImage[]
+
+  @@index([status, category, sortOrder])
+}
+
+model Variant {
+  id                String   @id @default(cuid())
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku               String   @unique
+  size              String
+  colorId           String
+  color             Color    @relation(fields: [colorId], references: [id])
+  /// Precio propio de la variante (céntimos, IVA incluido); null = precio del producto
+  priceCents        Int?
+  /// Solo se tiene en cuenta si el producto es OWN_STOCK
+  stock             Int      @default(0)
+  lowStockThreshold Int      @default(3)
+  /// Referencia de la variante en el proveedor de producción (fase 4)
+  providerRef       String?
+  /// Las combinaciones que dejan de existir se desactivan en vez de borrarse
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([productId, size, colorId])
+  @@index([colorId])
+}
+
+model ProductImage {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url        String
+  thumbUrl   String?
+  alt        String   @default("")
+  /// Si la foto corresponde a un color concreto (para cambiarla al elegir color)
+  colorId    String?
+  color      Color?   @relation(fields: [colorId], references: [id], onDelete: SetNull)
+  /// Claves en el almacenamiento si la foto se subió desde el admin (para poder borrarla)
+  storageKeys String[] @default([])
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([productId, sortOrder])
+}
+
+// ─────────────────────────── Administración ───────────────────────────
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  /// argon2id
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+  sessions     Session[]
+}
+
+model Session {
+  /// SHA-256 del token de la cookie (el token en claro nunca se guarda)
+  id        String    @id
+  userId    String
+  user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  ip        String?
+  userAgent String?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// Contadores para limitar peticiones (login, formularios)
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@map("rate_limits")
+}
+
+// ─────────────────────────── Configuración ───────────────────────────
+
+/// Pares clave/valor: IVA general, datos de la empresa, plantillas de email…
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model ShippingZone {
+  id            String   @id @default(cuid())
+  /// PENINSULA, BALEARES, CANARIAS, UE
+  code          String   @unique
+  name          String
+  /// Solo se vende a zonas activas
+  active        Boolean  @default(false)
+  priceCents    Int
+  /// Envío gratis a partir de este importe (céntimos); null = nunca
+  freeFromCents Int?
+  /// Países (ISO 3166-1 alfa-2) que cubre la zona
+  countries     String[]
+  /// Para España: prefijos de código postal (07 = Baleares, 35/38 = Canarias…); vacío = resto
+  postalPrefixes String[] @default([])
+  estimatedDays String   @default("")
+  sortOrder     Int      @default(0)
+  updatedAt     DateTime @updatedAt
+}

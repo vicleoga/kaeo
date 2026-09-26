@@ -1,11 +1,17 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { PRODUCTS } from '@/data/products'
-import { formatPrice } from './ProductCard'
+import type { ProductSummary } from '@/lib/types'
+import { formatCents } from '@/lib/catalog'
 import { CloseIcon } from './Icons'
 
-export default function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
+interface SearchOverlayProps {
+  open: boolean
+  onClose: () => void
+  products: ProductSummary[]
+}
+
+export default function SearchOverlay({ open, onClose, products }: SearchOverlayProps) {
   const [q, setQ] = useState('')
   const input = useRef<HTMLInputElement>(null)
 
@@ -17,7 +23,9 @@ export default function SearchOverlay({ open, onClose }: { open: boolean; onClos
   }, [open, onClose])
 
   const term = q.trim().toLowerCase()
-  const results = term ? PRODUCTS.filter((p) => `${p.name} ${p.category} ${p.color}`.toLowerCase().includes(term)) : []
+  const results = term ? products.filter((p) =>
+        `${p.name} ${p.category} ${p.colors.map((c) => c.name).join(' ')}`.toLowerCase().includes(term),
+      ) : []
 
   return (
     <div
@@ -48,14 +56,14 @@ export default function SearchOverlay({ open, onClose }: { open: boolean; onClos
           {results.map((p) => (
             <li key={p.id}>
               <a
-                href={`#${p.category}-productos`}
+                href={`/#${p.category}-productos`}
                 onClick={onClose}
                 className="flex items-center gap-4 py-4 transition-opacity hover:opacity-70"
               >
                 <img src={p.image} alt="" className="h-16 w-12 object-cover" />
                 <span className="flex-1 text-[11px] font-medium uppercase tracking-[0.18em]">{p.name}</span>
                 <span className="label text-washed-black/50">{p.category}</span>
-                <span className="text-xs">{formatPrice(p.price)}</span>
+                <span className="text-xs">{formatCents(p.priceCents)}</span>
               </a>
             </li>
           ))}

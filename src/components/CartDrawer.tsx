@@ -2,8 +2,7 @@
 
 import { useEffect } from 'react'
 import { useCart } from '@/context/CartContext'
-import { PALETTE } from '@/data/palette'
-import { formatPrice } from './ProductCard'
+import { formatCents } from '@/lib/catalog'
 import { CloseIcon } from './Icons'
 
 export default function CartDrawer() {
@@ -54,12 +53,12 @@ export default function CartDrawer() {
             <ul className="flex-1 divide-y divide-washed-black/10 overflow-y-auto px-6">
               {items.map(({ key, product, color, qty }) => (
                 <li key={key} className="flex gap-4 py-6">
-                  <img src={product.image} alt={product.alt} className="h-28 w-[88px] object-cover" />
+                  <img src={product.imageByColor[color.key] ?? product.image} alt={product.alt} className="h-28 w-[88px] object-cover" />
                   <div className="flex flex-1 flex-col">
                     <p className="text-[11px] font-medium uppercase tracking-[0.18em] leading-5">{product.name}</p>
                     <p className="mt-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-washed-black/60">
-                      <span className="inline-block h-2.5 w-2.5 rounded-full border border-washed-black/20" style={{ backgroundColor: PALETTE[color].hex }} />
-                      {PALETTE[color].name}
+                      <span className="inline-block h-2.5 w-2.5 rounded-full border border-washed-black/20" style={{ backgroundColor: color.hex }} />
+                      {color.name}
                     </p>
                     <div className="mt-auto flex items-center justify-between">
                       <div className="flex items-center border border-washed-black/30">
@@ -73,7 +72,7 @@ export default function CartDrawer() {
                           +
                         </button>
                       </div>
-                      <p className="text-xs">{formatPrice(product.price * qty)}</p>
+                      <p className="text-xs">{formatCents(product.priceCents * qty)}</p>
                     </div>
                   </div>
                 </li>
@@ -82,7 +81,7 @@ export default function CartDrawer() {
             <footer className="border-t border-washed-black/10 px-6 py-6">
               <div className="flex justify-between text-xs uppercase tracking-[0.2em]">
                 <span>Subtotal</span>
-                <span>{formatPrice(total)}</span>
+                <span>{formatCents(total)}</span>
               </div>
               <p className="mt-2 text-[11px] text-washed-black/60">Envío gratuito a partir de 80 €. Impuestos incluidos.</p>
               <button

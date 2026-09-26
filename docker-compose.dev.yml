@@ -1,6 +1,8 @@
 # Desarrollo: solo PostgreSQL en Docker, la app con `npm run dev` en tu máquina.
 #   docker compose -f docker-compose.dev.yml up -d
 # La base de datos queda accesible únicamente desde tu equipo (127.0.0.1:5432).
+# Proyecto con nombre propio para no chocar con los contenedores de docker-compose.yml.
+name: kaeo-dev
 
 services:
   db:

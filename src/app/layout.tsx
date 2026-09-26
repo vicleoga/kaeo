@@ -35,7 +35,8 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es" className={`${jost.variable} ${script.variable}`}>
-      <body>
+      {/* suppressHydrationWarning: extensiones como Grammarly añaden atributos al <body> */}
+      <body suppressHydrationWarning>
         <CartProvider>{children}</CartProvider>
       </body>
     </html>

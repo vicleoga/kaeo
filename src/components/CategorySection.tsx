@@ -1,9 +1,10 @@
 import ProductCard from './ProductCard'
 import Reveal from './Reveal'
-import { byCategory, type Category } from '@/data/products'
+import type { CategorySlug, ProductSummary } from '@/lib/types'
 
 interface CategorySectionProps {
-  id: Category
+  id: CategorySlug
+  products: ProductSummary[]
   title: string
   kicker: string
   lines: string[]
@@ -16,6 +17,7 @@ interface CategorySectionProps {
 
 export default function CategorySection({
   id,
+  products,
   title,
   kicker,
   lines,
@@ -25,7 +27,6 @@ export default function CategorySection({
   script,
   reversed = false,
 }: CategorySectionProps) {
-  const products = byCategory(id)
   return (
     <section id={id} className="scroll-mt-16 px-5 py-20 md:px-10 md:py-32">
       <div className="mx-auto max-w-7xl">

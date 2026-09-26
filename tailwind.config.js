@@ -9,6 +9,8 @@ export default {
         sage: '#8A9B8F',
         'washed-blue': '#5C7A8A',
         'washed-black': '#2E2E2E',
+        // Solo para avisos y errores (admin y formularios); tono tierra acorde a la paleta
+        terracotta: '#A4503A',
       },
       fontFamily: {
         // Variables definidas por next/font en src/app/layout.tsx (fuentes autoalojadas)
