@@ -1,12 +1,14 @@
-import { useState } from 'react'
-import Reveal from './Reveal.jsx'
+'use client'
+
+import { useState, type FormEvent } from 'react'
+import Reveal from './Reveal'
 
 export default function Newsletter() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
 
   // Demo: no se envía a ningún servicio todavía.
-  const submit = (e) => {
+  const submit = (e: FormEvent) => {
     e.preventDefault()
     if (email) setSent(true)
   }

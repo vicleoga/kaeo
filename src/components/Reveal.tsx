@@ -1,8 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+'use client'
+
+import { useEffect, useRef, useState, type ElementType, type HTMLAttributes } from 'react'
+
+interface RevealProps extends HTMLAttributes<HTMLElement> {
+  as?: ElementType
+  delay?: number
+}
 
 // Aparición progresiva al entrar en pantalla (fade + ligero desplazamiento).
-export default function Reveal({ as: Tag = 'div', delay = 0, className = '', children, ...rest }) {
-  const ref = useRef(null)
+export default function Reveal({ as: Tag = 'div', delay = 0, className = '', children, ...rest }: RevealProps) {
+  const ref = useRef<HTMLElement>(null)
   const [shown, setShown] = useState(false)
 
   useEffect(() => {

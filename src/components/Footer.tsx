@@ -1,5 +1,5 @@
-import Logo from './Logo.jsx'
-import { InstagramIcon, PinterestIcon, TiktokIcon } from './Icons.jsx'
+import Logo from './Logo'
+import { InstagramIcon, PinterestIcon, TiktokIcon } from './Icons'
 
 const LEGAL = ['Aviso legal', 'Privacidad', 'Cookies', 'Envíos y devoluciones']
 

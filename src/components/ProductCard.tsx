@@ -1,11 +1,13 @@
+'use client'
+
 import { useState } from 'react'
-import { PALETTE } from '../data/palette.js'
-import { asset } from '../lib/asset.js'
-import { useCart } from '../context/CartContext.jsx'
+import { PALETTE } from '@/data/palette'
+import type { Product } from '@/data/products'
+import { useCart } from '@/context/CartContext'
 
-export const formatPrice = (n) => `${n.toFixed(2).replace('.', ',')} €`
+export const formatPrice = (n: number) => `${n.toFixed(2).replace('.', ',')} €`
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product }: { product: Product }) {
   const [color, setColor] = useState(product.color)
   const { add } = useCart()
 
@@ -13,7 +15,7 @@ export default function ProductCard({ product }) {
     <article className="group">
       <div className="relative aspect-[4/5] overflow-hidden bg-sand/40">
         <img
-          src={asset(product.image)}
+          src={product.image}
           alt={product.alt}
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-[1400ms] ease-out group-hover:scale-105"

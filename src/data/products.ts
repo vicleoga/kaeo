@@ -1,11 +1,34 @@
 // Catálogo inventado de KAEO.
 //
+// Fase 1: sigue siendo un fichero estático. En la fase 2 pasa a PostgreSQL y
+// este fichero se convierte en los datos de prueba del seed.
+//
 // Las imágenes .jpg son recortes provisionales del moodboard (scripts/crop_moodboard.py).
 // Las prendas de las que aún no hay foto (lino, sudaderas, punto) usan una ilustración
 // .svg generada por scripts/generate-placeholders.mjs a partir de `garment`.
 // Ver IMAGENES.md para los prompts de las fotos definitivas.
 
-export const PRODUCTS = [
+import type { ColorKey } from './palette'
+
+export type Category = 'hombre' | 'mujer'
+export type Garment = 'tee' | 'tee-back' | 'sweatshirt' | 'shirt' | 'pants' | 'dress' | 'knit'
+
+export interface Product {
+  id: string
+  name: string
+  /** Precio en euros, IVA incluido */
+  price: number
+  color: ColorKey
+  colors: ColorKey[]
+  category: Category
+  image: string
+  alt: string
+  /** Solo prendas sin foto: tipo de ilustración que genera scripts/generate-placeholders.mjs */
+  garment?: Garment
+  print?: 'chest-logo' | 'palm' | string[]
+}
+
+export const PRODUCTS: Product[] = [
   // ——— HOMBRE ———
   {
     id: 'h-essential-offwhite',
@@ -14,7 +37,7 @@ export const PRODUCTS = [
     color: 'offwhite',
     colors: ['offwhite', 'sand', 'black'],
     category: 'hombre',
-    image: 'images/productos/essential-tee-offwhite.jpg',
+    image: '/images/productos/essential-tee-offwhite.jpg',
     alt: 'Camiseta de algodón lavado off white colgada en una percha de madera, con el logo KAEO pequeño en el pecho',
   },
   {
@@ -24,7 +47,7 @@ export const PRODUCTS = [
     color: 'sage',
     colors: ['sage', 'offwhite'],
     category: 'hombre',
-    image: 'images/hombre-espalda-palmera.jpg',
+    image: '/images/hombre-espalda-palmera.jpg',
     alt: 'Hombre de espaldas frente al mar con camiseta sage con logo KAEO, una palmera y la frase GOOD VIBES, BETTER DAYS, SLOW LIVING en la espalda',
   },
   {
@@ -34,7 +57,7 @@ export const PRODUCTS = [
     color: 'black',
     colors: ['black', 'blue'],
     category: 'hombre',
-    image: 'images/galeria/espalda-brighter-tomorrow.jpg',
+    image: '/images/galeria/espalda-brighter-tomorrow.jpg',
     alt: 'Hombre sentado de espaldas con camiseta washed black con la frase A BRIGHTER TOMORROW y el logo KAEO en la espalda',
   },
   {
@@ -44,7 +67,7 @@ export const PRODUCTS = [
     color: 'blue',
     colors: ['blue', 'offwhite'],
     category: 'hombre',
-    image: 'images/galeria/tejido-less-hurry.jpg',
+    image: '/images/galeria/tejido-less-hurry.jpg',
     alt: 'Detalle de tejido washed blue con la frase LESS HURRY MORE LIFE estampada en blanco',
   },
   {
@@ -54,7 +77,7 @@ export const PRODUCTS = [
     color: 'black',
     colors: ['black', 'sage', 'blue'],
     category: 'hombre',
-    image: 'images/productos/essential-tee-black.jpg',
+    image: '/images/productos/essential-tee-black.jpg',
     alt: 'Camiseta washed black colgada en una percha con el logo KAEO en blanco en el pecho',
   },
   {
@@ -65,7 +88,7 @@ export const PRODUCTS = [
     colors: ['sand', 'offwhite', 'blue'],
     category: 'hombre',
     garment: 'shirt',
-    image: 'images/productos/hombre-linen-shirt-sand.svg',
+    image: '/images/productos/hombre-linen-shirt-sand.svg',
     alt: 'Camisa de lino lavado color arena con cuello camisero y bolsillo en el pecho',
   },
   {
@@ -76,7 +99,7 @@ export const PRODUCTS = [
     colors: ['offwhite', 'sand', 'black'],
     category: 'hombre',
     garment: 'pants',
-    image: 'images/productos/hombre-linen-wide-pants-offwhite.svg',
+    image: '/images/productos/hombre-linen-wide-pants-offwhite.svg',
     alt: 'Pantalón ancho de lino off white con cintura elástica y cordón',
   },
   {
@@ -88,7 +111,7 @@ export const PRODUCTS = [
     category: 'hombre',
     garment: 'sweatshirt',
     print: 'chest-logo',
-    image: 'images/productos/hombre-better-days-sweatshirt-blue.svg',
+    image: '/images/productos/hombre-better-days-sweatshirt-blue.svg',
     alt: 'Sudadera de cuello redondo washed blue con logo KAEO en el pecho',
   },
 
@@ -100,7 +123,7 @@ export const PRODUCTS = [
     color: 'offwhite',
     colors: ['offwhite', 'sand'],
     category: 'mujer',
-    image: 'images/galeria/camiseta-doblada-good-vibes.jpg',
+    image: '/images/galeria/camiseta-doblada-good-vibes.jpg',
     alt: 'Camiseta off white doblada sobre piedra con las frases GOOD VIBES, GOOD FLOW, BETTER DAYS, SLOW LIVING y el logo KAEO en el pecho',
   },
   {
@@ -110,7 +133,7 @@ export const PRODUCTS = [
     color: 'sand',
     colors: ['sand', 'sage', 'offwhite'],
     category: 'mujer',
-    image: 'images/galeria/cuello-sand-slow-living.jpg',
+    image: '/images/galeria/cuello-sand-slow-living.jpg',
     alt: 'Cuello de camiseta color arena con el logo KAEO y las frases SLOW LIVING, BETTER DAYS, GOOD PEOPLE impresas por dentro',
   },
   {
@@ -120,7 +143,7 @@ export const PRODUCTS = [
     color: 'sage',
     colors: ['sage', 'sand', 'offwhite'],
     category: 'mujer',
-    image: 'images/productos/essential-tee-sage.jpg',
+    image: '/images/productos/essential-tee-sage.jpg',
     alt: 'Camiseta sage colgada en una percha de madera con el logo KAEO en blanco en el pecho',
   },
   {
@@ -130,7 +153,7 @@ export const PRODUCTS = [
     color: 'sand',
     colors: ['sand', 'offwhite', 'blue'],
     category: 'mujer',
-    image: 'images/productos/essential-tee-sand.jpg',
+    image: '/images/productos/essential-tee-sand.jpg',
     alt: 'Camiseta color arena colgada en una percha con el logo KAEO en negro en el pecho',
   },
   {
@@ -140,7 +163,7 @@ export const PRODUCTS = [
     color: 'blue',
     colors: ['blue', 'black'],
     category: 'mujer',
-    image: 'images/productos/essential-tee-blue.jpg',
+    image: '/images/productos/essential-tee-blue.jpg',
     alt: 'Camiseta washed blue colgada en una percha con el logo KAEO en blanco en el pecho',
   },
   {
@@ -151,7 +174,7 @@ export const PRODUCTS = [
     colors: ['offwhite', 'sand', 'sage'],
     category: 'mujer',
     garment: 'dress',
-    image: 'images/productos/mujer-same-sun-linen-dress.svg',
+    image: '/images/productos/mujer-same-sun-linen-dress.svg',
     alt: 'Vestido midi de lino off white con tirantes finos y falda con vuelo',
   },
   {
@@ -162,7 +185,7 @@ export const PRODUCTS = [
     colors: ['sand', 'offwhite'],
     category: 'mujer',
     garment: 'knit',
-    image: 'images/productos/mujer-soft-knit-top-sand.svg',
+    image: '/images/productos/mujer-soft-knit-top-sand.svg',
     alt: 'Top de punto canalé color arena de manga corta y escote barco',
   },
   {
@@ -173,9 +196,9 @@ export const PRODUCTS = [
     colors: ['sage', 'offwhite'],
     category: 'mujer',
     garment: 'pants',
-    image: 'images/productos/mujer-linen-wide-pants-sage.svg',
+    image: '/images/productos/mujer-linen-wide-pants-sage.svg',
     alt: 'Pantalón ancho de lino color sage con cintura fruncida',
   },
 ]
 
-export const byCategory = (category) => PRODUCTS.filter((p) => p.category === category)
+export const byCategory = (category: Category) => PRODUCTS.filter((p) => p.category === category)

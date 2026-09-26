@@ -1,16 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
-import { PRODUCTS } from '../data/products.js'
-import { asset } from '../lib/asset.js'
-import { formatPrice } from './ProductCard.jsx'
-import { CloseIcon } from './Icons.jsx'
+'use client'
 
-export default function SearchOverlay({ open, onClose }) {
+import { useEffect, useRef, useState } from 'react'
+import { PRODUCTS } from '@/data/products'
+import { formatPrice } from './ProductCard'
+import { CloseIcon } from './Icons'
+
+export default function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [q, setQ] = useState('')
-  const input = useRef(null)
+  const input = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (open) setTimeout(() => input.current?.focus(), 50)
-    const onKey = (e) => e.key === 'Escape' && onClose()
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
@@ -51,7 +52,7 @@ export default function SearchOverlay({ open, onClose }) {
                 onClick={onClose}
                 className="flex items-center gap-4 py-4 transition-opacity hover:opacity-70"
               >
-                <img src={asset(p.image)} alt="" className="h-16 w-12 object-cover" />
+                <img src={p.image} alt="" className="h-16 w-12 object-cover" />
                 <span className="flex-1 text-[11px] font-medium uppercase tracking-[0.18em]">{p.name}</span>
                 <span className="label text-washed-black/50">{p.category}</span>
                 <span className="text-xs">{formatPrice(p.price)}</span>

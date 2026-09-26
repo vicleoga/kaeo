@@ -1,14 +1,13 @@
-import Logo from './Logo.jsx'
-import { asset } from '../lib/asset.js'
+import Logo from './Logo'
 
 export default function Hero() {
   return (
     <section id="top" className="relative h-[100svh] min-h-[560px] w-full overflow-hidden bg-washed-black">
       <img
-        src={asset('images/hero-costa-acantilados.jpg')}
+        src="/images/hero-costa-acantilados.jpg"
         alt="Acantilados de piedra caliza sobre el mar Mediterráneo en calma, con luz cálida de tarde"
         className="absolute inset-0 h-full w-full animate-fade-in object-cover object-[68%_center] md:object-center"
-        fetchpriority="high"
+        fetchPriority="high"
       />
       <div className="absolute inset-0 bg-gradient-to-b from-washed-black/45 via-washed-black/20 to-washed-black/50" aria-hidden="true" />
 

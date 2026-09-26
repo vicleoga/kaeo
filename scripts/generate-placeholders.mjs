@@ -1,5 +1,5 @@
 // Genera ilustraciones placeholder (flat lay) para las prendas de KAEO que aún
-// no tienen foto: las que en src/data/products.js llevan `garment`.
+// no tienen foto: las que en src/data/products.ts llevan `garment`.
 // El resto de imágenes provisionales son recortes del moodboard
 // (scripts/crop_moodboard.py). Ver IMAGENES.md para las fotos definitivas.
 //
@@ -9,8 +9,8 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { CAP_HEIGHT, LOGO } from '../src/lib/logoGeometry.js'
-import { PRODUCTS } from '../src/data/products.js'
-import { PALETTE } from '../src/data/palette.js'
+import { PRODUCTS } from '../src/data/products.ts'
+import { PALETTE } from '../src/data/palette.ts'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'images')
 
@@ -228,7 +228,7 @@ function favicon() {
 // ——— salida ———
 console.log('Generando ilustraciones placeholder…')
 for (const p of PRODUCTS.filter((p) => p.garment)) {
-  write(p.image.replace(/^images\//, ''), GARMENTS[p.garment](PALETTE[p.color].hex, p.print))
+  write(p.image.replace(/^\/images\//, ''), GARMENTS[p.garment](PALETTE[p.color].hex, p.print))
 }
 writeFileSync(join(ROOT, '..', 'favicon.svg'), favicon())
 console.log('Listo.')

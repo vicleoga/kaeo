@@ -1,9 +1,8 @@
-import Reveal from './Reveal.jsx'
-import { KaeoWord } from './Logo.jsx'
-import { asset } from '../lib/asset.js'
+import Reveal from './Reveal'
+import { KaeoWord } from './Logo'
 
 // Mosaico asimétrico con los paneles del moodboard (las frases manuscritas ya vienen en las fotos).
-const TILES = [
+const TILES: { src: string; alt: string; className: string; position?: string }[] = [
   {
     src: 'galeria/paisaje-same-sun.jpg',
     alt: 'Acantilados de piedra caliza sobre el mar Mediterráneo con la frase manuscrita Same Sun Higher Standards',
@@ -61,7 +60,7 @@ export default function Gallery() {
           {TILES.map((t, i) => (
             <Reveal key={t.src} delay={(i % 3) * 120} className={`group relative overflow-hidden ${t.className}`}>
               <img
-                src={asset(`images/${t.src}`)}
+                src={`/images/${t.src}`}
                 alt={t.alt}
                 loading="lazy"
                 style={{ objectPosition: t.position || 'center' }}

@@ -1,7 +1,9 @@
+'use client'
+
 import { useEffect, useState } from 'react'
-import Logo from './Logo.jsx'
-import { BagIcon, CloseIcon, MenuIcon, SearchIcon } from './Icons.jsx'
-import { useCart } from '../context/CartContext.jsx'
+import Logo from './Logo'
+import { BagIcon, CloseIcon, MenuIcon, SearchIcon } from './Icons'
+import { useCart } from '@/context/CartContext'
 
 const LINKS = [
   { href: '#hombre', label: 'Hombre' },
@@ -10,7 +12,7 @@ const LINKS = [
   { href: '#nosotros', label: 'Nosotros' },
 ]
 
-export default function Navbar({ onSearch }) {
+export default function Navbar({ onSearch }: { onSearch: () => void }) {
   const [scrolled, setScrolled] = useState(false)
   const [menu, setMenu] = useState(false)
   const { count, setOpen } = useCart()

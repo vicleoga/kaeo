@@ -1,6 +1,5 @@
-import Reveal from './Reveal.jsx'
-import { asset } from '../lib/asset.js'
-import { PALETTE, PALETTE_ORDER } from '../data/palette.js'
+import Reveal from './Reveal'
+import { PALETTE, PALETTE_ORDER } from '@/data/palette'
 
 // Como en el moodboard: las cinco camisetas en la barra y, debajo, nombre y código de cada color.
 export default function Palette() {
@@ -21,7 +20,7 @@ export default function Palette() {
         <Reveal delay={150} className="mt-16 md:mt-24">
           <div className="overflow-hidden">
             <img
-              src={asset('images/coleccion-camisetas-colgadas.jpg')}
+              src="/images/coleccion-camisetas-colgadas.jpg"
               alt="Cinco camisetas KAEO colgadas en perchas de madera de una barra rústica, de izquierda a derecha: off white, sand, sage, washed blue y washed black"
               loading="lazy"
               className="w-full transition-transform duration-[1800ms] hover:scale-[1.03]"

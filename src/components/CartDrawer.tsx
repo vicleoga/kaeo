@@ -1,15 +1,16 @@
+'use client'
+
 import { useEffect } from 'react'
-import { useCart } from '../context/CartContext.jsx'
-import { PALETTE } from '../data/palette.js'
-import { asset } from '../lib/asset.js'
-import { formatPrice } from './ProductCard.jsx'
-import { CloseIcon } from './Icons.jsx'
+import { useCart } from '@/context/CartContext'
+import { PALETTE } from '@/data/palette'
+import { formatPrice } from './ProductCard'
+import { CloseIcon } from './Icons'
 
 export default function CartDrawer() {
   const { items, open, setOpen, setQty, total, count } = useCart()
 
   useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && setOpen(false)
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
     window.addEventListener('keydown', onKey)
     document.body.style.overflow = open ? 'hidden' : ''
     return () => window.removeEventListener('keydown', onKey)
@@ -53,7 +54,7 @@ export default function CartDrawer() {
             <ul className="flex-1 divide-y divide-washed-black/10 overflow-y-auto px-6">
               {items.map(({ key, product, color, qty }) => (
                 <li key={key} className="flex gap-4 py-6">
-                  <img src={asset(product.image)} alt={product.alt} className="h-28 w-[88px] object-cover" />
+                  <img src={product.image} alt={product.alt} className="h-28 w-[88px] object-cover" />
                   <div className="flex flex-1 flex-col">
                     <p className="text-[11px] font-medium uppercase tracking-[0.18em] leading-5">{product.name}</p>
                     <p className="mt-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-washed-black/60">
