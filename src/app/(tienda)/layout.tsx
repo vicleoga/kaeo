@@ -2,13 +2,14 @@ import type { ReactNode } from 'react'
 import SiteChrome from '@/components/SiteChrome'
 import Footer from '@/components/Footer'
 import { listStoreProducts } from '@/server/catalog'
+import { freeShippingThreshold } from '@/server/shipping'
 
 // La tienda lee el catálogo de la base de datos en cada petición (los cambios del admin se ven al momento).
 export const dynamic = 'force-dynamic'
 
 // Marco común de todas las páginas públicas de la tienda.
 export default async function StoreLayout({ children }: { children: ReactNode }) {
-  const products = await listStoreProducts()
+  const [products, freeShippingFromCents] = await Promise.all([listStoreProducts(), freeShippingThreshold()])
   return (
     <>
       <a
@@ -17,7 +18,7 @@ export default async function StoreLayout({ children }: { children: ReactNode })
       >
         Saltar al contenido
       </a>
-      <SiteChrome products={products} />
+      <SiteChrome products={products} freeShippingFromCents={freeShippingFromCents} />
       <main id="contenido">{children}</main>
       <Footer />
     </>

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import type { ProductSummary } from '@/lib/types'
 import { formatCents } from '@/lib/catalog'
@@ -55,16 +56,16 @@ export default function SearchOverlay({ open, onClose, products }: SearchOverlay
         <ul className="mt-8 max-h-[60vh] divide-y divide-washed-black/10 overflow-y-auto">
           {results.map((p) => (
             <li key={p.id}>
-              <a
-                href={`/#${p.category}-productos`}
+              <Link
+                href={`/producto/${p.slug}`}
                 onClick={onClose}
                 className="flex items-center gap-4 py-4 transition-opacity hover:opacity-70"
               >
                 <img src={p.image} alt="" className="h-16 w-12 object-cover" />
                 <span className="flex-1 text-[11px] font-medium uppercase tracking-[0.18em]">{p.name}</span>
                 <span className="label text-washed-black/50">{p.category}</span>
-                <span className="text-xs">{formatCents(p.priceCents)}</span>
-              </a>
+                <span className="text-xs">{formatCents(p.minPriceCents)}</span>
+              </Link>
             </li>
           ))}
           {term && results.length === 0 && <li className="label py-6 text-washed-black/60">Sin resultados — prueba con “linen”.</li>}

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import ProductCard from './ProductCard'
 import Reveal from './Reveal'
 import type { CategorySlug, ProductSummary } from '@/lib/types'
@@ -58,9 +59,9 @@ export default function CategorySection({
               ))}
             </p>
             <span className={`divider mt-8 ${reversed ? 'md:ml-auto' : ''}`} aria-hidden="true" />
-            <a href={`#${id}-productos`} className="btn-dark mt-10">
-              Ver {products.length} prendas
-            </a>
+            <Link href={`/${id}`} className="btn-dark mt-10">
+              Ver colección {title.toLowerCase()}
+            </Link>
           </Reveal>
         </div>
 

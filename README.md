@@ -4,8 +4,8 @@ Tienda online de **KAEO**: camisetas y básicos de estilo mediterráneo, minimal
 Todo el diseño parte del moodboard oficial de la marca (`public/images/moodboard/kaeo-moodboard.webp`).
 
 > **Estado:** en migración de landing estática a tienda completa (Next.js + PostgreSQL), por fases.
-> Hecho: **1** nuevo stack · **2** base de datos y administración de productos.
-> Siguiente: 3 catálogo, ficha de producto y carrito con tallas.
+> Hecho: **1** nuevo stack · **2** base de datos y administración de productos · **3** catálogo, ficha y carrito con tallas.
+> Siguiente: 4 checkout y pedidos.
 > La versión estática anterior sigue publicada en https://vicleoga.github.io/kaeo/ (rama `gh-pages`,
 > congelada) hasta que la tienda esté desplegada en Hetzner.
 
@@ -55,6 +55,21 @@ npm run dev                                      # http://localhost:3000 · admi
 ```
 
 `GET /api/health` devuelve `{"status":"ok","db":"ok"}` y lo usa el healthcheck del contenedor.
+
+## Tienda
+
+| Ruta | Qué es |
+|---|---|
+| `/` | Portada (la landing original, con los productos destacados de la BD) |
+| `/hombre`, `/mujer` | Catálogo con filtros de color y talla y orden (en la URL: `?color=sage&talla=M&orden=precio-asc`) |
+| `/producto/[slug]` | Ficha: galería que cambia con el color, selector de color y talla (agotadas tachadas, aviso de últimas unidades), guía de tallas, composición y cuidados, relacionados. Metadatos SEO/Open Graph y datos estructurados schema.org (`Product`, `AggregateOffer`, `BreadcrumbList`) |
+| `/carrito` | Carrito completo (también hay carrito lateral) |
+| `/sitemap.xml`, `/robots.txt` | Para buscadores |
+
+**Carrito:** cada línea es una variante (talla + color). Se guarda en el navegador (sigue ahí al volver y se
+sincroniza entre pestañas), pero **el servidor es la fuente de verdad**: al cargar y al abrir el carrito se
+revalidan precio, stock y si el producto sigue publicado, se ajustan las cantidades y se avisa de los cambios.
+Máximo 10 unidades por línea y nunca más que el stock en productos de stock propio.
 
 ## Panel de administración (`/admin`)
 

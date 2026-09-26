@@ -1,26 +1,31 @@
 'use client'
 
-import { useEffect } from 'react'
+import Link from 'next/link'
+import { useEffect, useRef } from 'react'
 import { useCart } from '@/context/CartContext'
 import { formatCents } from '@/lib/catalog'
 import { CloseIcon } from './Icons'
+import CartLineItem from './cart/CartLineItem'
+import FreeShippingHint from './cart/FreeShippingHint'
 
-export default function CartDrawer() {
-  const { items, open, setOpen, setQty, total, count } = useCart()
+export default function CartDrawer({ freeShippingFromCents }: { freeShippingFromCents: number | null }) {
+  const { lines, open, setOpen, subtotal, count, notice, dismissNotice } = useCart()
+  const closeRef = useRef<HTMLButtonElement>(null)
+  const hasUnavailable = lines.some((l) => l.unavailable)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
     window.addEventListener('keydown', onKey)
     document.body.style.overflow = open ? 'hidden' : ''
+    if (open) closeRef.current?.focus()
     return () => window.removeEventListener('keydown', onKey)
   }, [open, setOpen])
 
+  const close = () => setOpen(false)
+
   return (
-    <div className={`fixed inset-0 z-50 ${open ? '' : 'pointer-events-none'}`} aria-hidden={!open}>
-      <div
-        className={`absolute inset-0 bg-washed-black/40 transition-opacity duration-500 ${open ? 'opacity-100' : 'opacity-0'}`}
-        onClick={() => setOpen(false)}
-      />
+    <div className={`fixed inset-0 z-50 ${open ? '' : 'pointer-events-none'}`} aria-hidden={!open} inert={!open}>
+      <div className={`absolute inset-0 bg-washed-black/40 transition-opacity duration-500 ${open ? 'opacity-100' : 'opacity-0'}`} onClick={close} />
       <aside
         role="dialog"
         aria-modal="true"
@@ -31,12 +36,21 @@ export default function CartDrawer() {
       >
         <header className="flex items-center justify-between border-b border-washed-black/10 px-6 py-6">
           <h2 className="label">Tu carrito ({count})</h2>
-          <button onClick={() => setOpen(false)} aria-label="Cerrar carrito" className="p-1">
+          <button ref={closeRef} onClick={close} aria-label="Cerrar carrito" className="p-1">
             <CloseIcon />
           </button>
         </header>
 
-        {items.length === 0 ? (
+        {notice && (
+          <div className="alert-error mx-6 mt-4 flex items-start justify-between gap-3 text-xs" role="status">
+            <span>{notice}</span>
+            <button onClick={dismissNotice} aria-label="Cerrar aviso" className="shrink-0">
+              ✕
+            </button>
+          </div>
+        )}
+
+        {lines.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
             <p className="heading text-xs leading-7 tracking-label text-washed-black/70">
               Nothing here yet
@@ -44,52 +58,41 @@ export default function CartDrawer() {
               No hurry
             </p>
             <span className="divider mt-6" aria-hidden="true" />
-            <button onClick={() => setOpen(false)} className="btn-dark mt-10">
-              Seguir mirando
-            </button>
+            <div className="mt-10 flex gap-3">
+              <Link href="/hombre" onClick={close} className="btn-dark">
+                Hombre
+              </Link>
+              <Link href="/mujer" onClick={close} className="btn-dark">
+                Mujer
+              </Link>
+            </div>
           </div>
         ) : (
           <>
             <ul className="flex-1 divide-y divide-washed-black/10 overflow-y-auto px-6">
-              {items.map(({ key, product, color, qty }) => (
-                <li key={key} className="flex gap-4 py-6">
-                  <img src={product.imageByColor[color.key] ?? product.image} alt={product.alt} className="h-28 w-[88px] object-cover" />
-                  <div className="flex flex-1 flex-col">
-                    <p className="text-[11px] font-medium uppercase tracking-[0.18em] leading-5">{product.name}</p>
-                    <p className="mt-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-washed-black/60">
-                      <span className="inline-block h-2.5 w-2.5 rounded-full border border-washed-black/20" style={{ backgroundColor: color.hex }} />
-                      {color.name}
-                    </p>
-                    <div className="mt-auto flex items-center justify-between">
-                      <div className="flex items-center border border-washed-black/30">
-                        <button className="px-3 py-1 text-sm" onClick={() => setQty(key, qty - 1)} aria-label="Quitar uno">
-                          −
-                        </button>
-                        <span className="w-6 text-center text-xs" aria-live="polite">
-                          {qty}
-                        </span>
-                        <button className="px-3 py-1 text-sm" onClick={() => setQty(key, qty + 1)} aria-label="Añadir uno">
-                          +
-                        </button>
-                      </div>
-                      <p className="text-xs">{formatCents(product.priceCents * qty)}</p>
-                    </div>
-                  </div>
-                </li>
+              {lines.map((line) => (
+                <CartLineItem key={line.variantId} line={line} onNavigate={close} />
               ))}
             </ul>
-            <footer className="border-t border-washed-black/10 px-6 py-6">
+            <footer className="space-y-4 border-t border-washed-black/10 px-6 py-6">
               <div className="flex justify-between text-xs uppercase tracking-[0.2em]">
                 <span>Subtotal</span>
-                <span>{formatCents(total)}</span>
+                <span className="tabular-nums">{formatCents(subtotal)}</span>
               </div>
-              <p className="mt-2 text-[11px] text-washed-black/60">Envío gratuito a partir de 80 €. Impuestos incluidos.</p>
-              <button
-                className="mt-6 w-full border border-washed-black bg-washed-black py-4 text-[11px] font-medium uppercase tracking-label text-offwhite transition-colors duration-500 hover:bg-transparent hover:text-washed-black"
-                onClick={() => alert('Esto es una demo: el checkout llegará pronto.')}
+              <FreeShippingHint subtotal={subtotal} freeFromCents={freeShippingFromCents} />
+              <Link
+                href="/checkout"
+                onClick={close}
+                aria-disabled={hasUnavailable || count === 0}
+                className={`block w-full border border-washed-black bg-washed-black py-4 text-center text-[11px] font-medium uppercase tracking-label text-offwhite transition-colors duration-500 hover:bg-transparent hover:text-washed-black ${
+                  hasUnavailable || count === 0 ? 'pointer-events-none opacity-40' : ''
+                }`}
               >
                 Finalizar compra
-              </button>
+              </Link>
+              <Link href="/carrito" onClick={close} className="block text-center text-[10px] uppercase tracking-[0.22em] text-washed-black/60 hover:text-washed-black">
+                Ver carrito
+              </Link>
             </footer>
           </>
         )}

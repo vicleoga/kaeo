@@ -1,21 +1,28 @@
 'use client'
 
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Logo from './Logo'
 import { BagIcon, CloseIcon, MenuIcon, SearchIcon } from './Icons'
 import { useCart } from '@/context/CartContext'
 
 const LINKS = [
-  { href: '#hombre', label: 'Hombre' },
-  { href: '#mujer', label: 'Mujer' },
-  { href: '#coleccion', label: 'Colección' },
-  { href: '#nosotros', label: 'Nosotros' },
+  { href: '/hombre', label: 'Hombre' },
+  { href: '/mujer', label: 'Mujer' },
+  { href: '/#coleccion', label: 'Colección' },
+  { href: '/#nosotros', label: 'Nosotros' },
 ]
 
 export default function Navbar({ onSearch }: { onSearch: () => void }) {
   const [scrolled, setScrolled] = useState(false)
   const [menu, setMenu] = useState(false)
   const { count, setOpen } = useCart()
+  const pathname = usePathname()
+  // Solo la portada tiene foto a sangre detrás de la barra: en el resto de páginas va siempre sólida.
+  const overHero = pathname === '/'
+
+  useEffect(() => setMenu(false), [pathname])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -24,7 +31,7 @@ export default function Navbar({ onSearch }: { onSearch: () => void }) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const solid = scrolled || menu
+  const solid = scrolled || menu || !overHero
   const tone = solid ? 'text-washed-black' : 'text-offwhite'
 
   return (
@@ -38,21 +45,21 @@ export default function Navbar({ onSearch }: { onSearch: () => void }) {
           <button className="md:hidden -ml-1 p-1" onClick={() => setMenu((m) => !m)} aria-label={menu ? 'Cerrar menú' : 'Abrir menú'} aria-expanded={menu}>
             {menu ? <CloseIcon /> : <MenuIcon />}
           </button>
-          <a href="#top" aria-label="KAEO — inicio" className="hidden md:block">
+          <Link href="/" aria-label="KAEO — inicio" className="hidden md:block">
             <Logo size={17} />
-          </a>
+          </Link>
         </div>
 
-        <a href="#top" aria-label="KAEO — inicio" className="md:hidden">
+        <Link href="/" aria-label="KAEO — inicio" className="md:hidden">
           <Logo size={15} />
-        </a>
+        </Link>
 
         <ul className="hidden md:flex items-center gap-10">
           {LINKS.map((l) => (
             <li key={l.href}>
-              <a href={l.href} className="label relative py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-left after:scale-x-0 after:bg-current after:transition-transform after:duration-500 hover:after:scale-x-100">
+              <Link href={l.href} className="label relative py-2 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-left after:scale-x-0 after:bg-current after:transition-transform after:duration-500 hover:after:scale-x-100">
                 {l.label}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
@@ -77,9 +84,9 @@ export default function Navbar({ onSearch }: { onSearch: () => void }) {
         <ul className="flex flex-col items-center gap-7 pb-10 pt-4">
           {LINKS.map((l) => (
             <li key={l.href}>
-              <a href={l.href} className="label text-xs" onClick={() => setMenu(false)}>
+              <Link href={l.href} className="label text-xs" onClick={() => setMenu(false)}>
                 {l.label}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
