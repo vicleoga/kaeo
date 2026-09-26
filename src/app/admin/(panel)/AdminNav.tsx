@@ -7,9 +7,9 @@ const ITEMS: { href: string; label: string; soon?: string }[] = [
   { href: '/admin', label: 'Dashboard' },
   { href: '/admin/productos', label: 'Productos' },
   { href: '/admin/inventario', label: 'Inventario' },
-  { href: '/admin/pedidos', label: 'Pedidos', soon: 'Fase 4' },
-  { href: '/admin/clientes', label: 'Clientes', soon: 'Fase 4' },
-  { href: '/admin/descuentos', label: 'Descuentos', soon: 'Fase 4' },
+  { href: '/admin/pedidos', label: 'Pedidos' },
+  { href: '/admin/clientes', label: 'Clientes' },
+  { href: '/admin/descuentos', label: 'Descuentos' },
   { href: '/admin/suscriptores', label: 'Newsletter', soon: 'Fase 5' },
   { href: '/admin/configuracion', label: 'Configuración', soon: 'Fase 4' },
 ]

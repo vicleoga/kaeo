@@ -46,21 +46,21 @@ model Color {
 }
 
 model Product {
-  id             String        @id @default(cuid())
+  id             String         @id @default(cuid())
   /// Código interno correlativo (KA0001), base de los SKU
-  code           String        @unique
-  slug           String        @unique
+  code           String         @unique
+  slug           String         @unique
   name           String
   category       Category
-  status         ProductStatus @default(DRAFT)
-  stockMode      StockMode     @default(ON_DEMAND)
+  status         ProductStatus  @default(DRAFT)
+  stockMode      StockMode      @default(ON_DEMAND)
   /// Precio base en céntimos, IVA incluido. Cada variante puede sobrescribirlo.
   priceCents     Int
   /// Tipo de IVA propio en puntos básicos; null = el general de la configuración
   vatRateBp      Int?
-  description    String        @default("")
-  composition    String        @default("")
-  care           String        @default("")
+  description    String         @default("")
+  composition    String         @default("")
+  care           String         @default("")
   /// Tallas del producto en su orden de presentación (dependen de la prenda del proveedor)
   sizes          String[]
   /// Guía de tallas: { columns: string[], rows: string[][] }
@@ -70,10 +70,10 @@ model Product {
   seoTitle       String?
   seoDescription String?
   /// Aparece en la portada
-  showOnHome     Boolean       @default(true)
-  sortOrder      Int           @default(0)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  showOnHome     Boolean        @default(true)
+  sortOrder      Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
   variants       Variant[]
   images         ProductImage[]
 
@@ -81,43 +81,44 @@ model Product {
 }
 
 model Variant {
-  id                String   @id @default(cuid())
+  id                String      @id @default(cuid())
   productId         String
-  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  sku               String   @unique
+  product           Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku               String      @unique
   size              String
   colorId           String
-  color             Color    @relation(fields: [colorId], references: [id])
+  color             Color       @relation(fields: [colorId], references: [id])
   /// Precio propio de la variante (céntimos, IVA incluido); null = precio del producto
   priceCents        Int?
   /// Solo se tiene en cuenta si el producto es OWN_STOCK
-  stock             Int      @default(0)
-  lowStockThreshold Int      @default(3)
+  stock             Int         @default(0)
+  lowStockThreshold Int         @default(3)
   /// Referencia de la variante en el proveedor de producción (fase 4)
   providerRef       String?
   /// Las combinaciones que dejan de existir se desactivan en vez de borrarse
-  active            Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  active            Boolean     @default(true)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  orderItems        OrderItem[]
 
   @@unique([productId, size, colorId])
   @@index([colorId])
 }
 
 model ProductImage {
-  id         String   @id @default(cuid())
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  url        String
-  thumbUrl   String?
-  alt        String   @default("")
+  id          String   @id @default(cuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url         String
+  thumbUrl    String?
+  alt         String   @default("")
   /// Si la foto corresponde a un color concreto (para cambiarla al elegir color)
-  colorId    String?
-  color      Color?   @relation(fields: [colorId], references: [id], onDelete: SetNull)
+  colorId     String?
+  color       Color?   @relation(fields: [colorId], references: [id], onDelete: SetNull)
   /// Claves en el almacenamiento si la foto se subió desde el admin (para poder borrarla)
   storageKeys String[] @default([])
-  sortOrder  Int      @default(0)
-  createdAt  DateTime @default(now())
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
 
   @@index([productId, sortOrder])
 }
@@ -168,20 +169,225 @@ model Setting {
 }
 
 model ShippingZone {
-  id            String   @id @default(cuid())
+  id             String   @id @default(cuid())
   /// PENINSULA, BALEARES, CANARIAS, UE
-  code          String   @unique
-  name          String
+  code           String   @unique
+  name           String
   /// Solo se vende a zonas activas
-  active        Boolean  @default(false)
-  priceCents    Int
+  active         Boolean  @default(false)
+  priceCents     Int
   /// Envío gratis a partir de este importe (céntimos); null = nunca
-  freeFromCents Int?
+  freeFromCents  Int?
   /// Países (ISO 3166-1 alfa-2) que cubre la zona
-  countries     String[]
+  countries      String[]
   /// Para España: prefijos de código postal (07 = Baleares, 35/38 = Canarias…); vacío = resto
   postalPrefixes String[] @default([])
-  estimatedDays String   @default("")
-  sortOrder     Int      @default(0)
-  updatedAt     DateTime @updatedAt
+  estimatedDays  String   @default("")
+  sortOrder      Int      @default(0)
+  updatedAt      DateTime @updatedAt
+}
+
+// ─────────────────────────────── Pedidos (fase 4) ───────────────────────────────
+
+enum OrderStatus {
+  PENDING_PAYMENT // pendiente de pago
+  PAID // pagado
+  SENT_TO_PRODUCTION // enviado a producción
+  IN_PRODUCTION // en producción
+  SHIPPED // enviado
+  DELIVERED // entregado
+  CANCELLED // cancelado
+  PAYMENT_FAILED // pago fallido
+  REFUNDED // reembolsado
+  NEEDS_REVIEW // requiere revisión (p. ej. pago recibido pero falló el envío a producción)
+}
+
+model Customer {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String
+  phone          String?
+  /// Aceptó recibir la newsletter al comprar (el alta real se gestiona en Subscriber, fase 5)
+  marketingOptIn Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  orders         Order[]
+}
+
+model Order {
+  id              String             @id @default(cuid())
+  /// Correlativo interno; el número público (KAEO-26-000123) se deriva de él
+  seq             Int                @unique @default(autoincrement())
+  number          String             @unique
+  /// Token secreto para ver el pedido sin cuenta (enlace del email y página de confirmación)
+  accessToken     String             @unique
+  /// Evita pedidos duplicados si el cliente pulsa dos veces "Pagar"
+  checkoutKey     String             @unique
+  status          OrderStatus        @default(PENDING_PAYMENT)
+  customerId      String
+  customer        Customer           @relation(fields: [customerId], references: [id])
+  email           String
+  /// Copias en el momento de la compra (no cambian aunque cambie el catálogo o la configuración)
+  shippingAddress Json
+  shippingZone    String
+  shippingName    String
+  subtotalCents   Int
+  discountCents   Int                @default(0)
+  discountCode    String?
+  shippingCents   Int
+  totalCents      Int
+  /// IVA incluido en el total (informativo, para facturas)
+  taxCents        Int
+  currency        String             @default("EUR")
+  customerNote    String?
+  /// Notas internas del equipo (no las ve el cliente)
+  internalNotes   String             @default("")
+  /// Stock propio ya descontado (para no descontarlo ni devolverlo dos veces)
+  stockCommitted  Boolean            @default(false)
+  paidAt          DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  items           OrderItem[]
+  events          OrderStatusEvent[]
+  payments        Payment[]
+  fulfillments    FulfillmentJob[]
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+model OrderItem {
+  id             String    @id @default(cuid())
+  orderId        String
+  order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  /// Referencias vivas (pueden quedar a null si se borra el producto); lo que vale es la copia
+  variantId      String?
+  variant        Variant?  @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  productId      String?
+  productName    String
+  sku            String
+  size           String
+  colorName      String
+  image          String?
+  unitPriceCents Int
+  quantity       Int
+  vatRateBp      Int
+  /// Total de la línea tras repartir el descuento (céntimos, IVA incluido)
+  totalCents     Int
+  stockMode      StockMode
+  providerRef    String?
+}
+
+model OrderStatusEvent {
+  id         String       @id @default(cuid())
+  orderId    String
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  /// system | webhook:<proveedor> | admin:<email> | customer
+  actor      String
+  note       String?
+  createdAt  DateTime     @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  orderId       String
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider      String
+  /// Id de la sesión/pago en el proveedor
+  providerRef   String        @unique
+  status        PaymentStatus @default(PENDING)
+  amountCents   Int
+  refundedCents Int           @default(0)
+  failureReason String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  refunds       Refund[]
+}
+
+model Refund {
+  id          String   @id @default(cuid())
+  paymentId   String
+  payment     Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  providerRef String
+  amountCents Int
+  reason      String?
+  actor       String
+  createdAt   DateTime @default(now())
+}
+
+enum FulfillmentStatus {
+  PENDING // creado, aún no aceptado por el proveedor
+  SUBMITTED // aceptado por el proveedor
+  IN_PRODUCTION
+  SHIPPED
+  DELIVERED
+  FAILED
+  CANCELLED
+}
+
+model FulfillmentJob {
+  id             String            @id @default(cuid())
+  orderId        String
+  order          Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider       String
+  providerRef    String?           @unique
+  status         FulfillmentStatus @default(PENDING)
+  attempts       Int               @default(0)
+  lastError      String?
+  carrier        String?
+  trackingNumber String?
+  trackingUrl    String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+/// Registro de webhooks recibidos: garantiza que cada evento se procesa una sola vez
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  provider    String
+  eventId     String
+  type        String
+  payload     Json
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+  error       String?
+
+  @@unique([provider, eventId])
+}
+
+enum DiscountType {
+  PERCENT
+  AMOUNT
+}
+
+model DiscountCode {
+  id               String       @id @default(cuid())
+  /// Siempre en mayúsculas
+  code             String       @unique
+  type             DiscountType
+  /// PERCENT: puntos básicos (1000 = 10 %). AMOUNT: céntimos.
+  value            Int
+  minSubtotalCents Int?
+  startsAt         DateTime?
+  expiresAt        DateTime?
+  /// null = sin límite
+  maxUses          Int?
+  /// Se incrementa al pagarse el pedido
+  usedCount        Int          @default(0)
+  active           Boolean      @default(true)
+  description      String       @default("")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 }

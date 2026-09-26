@@ -178,10 +178,20 @@ async function seedProducts() {
   return created
 }
 
+async function seedDiscounts() {
+  // Código de ejemplo (se puede editar o desactivar desde el admin)
+  await prisma.discountCode.upsert({
+    where: { code: 'SLOWCLUB10' },
+    update: {},
+    create: { code: 'SLOWCLUB10', type: 'PERCENT', value: 1000, description: '10 % de bienvenida para la newsletter (ejemplo)' },
+  })
+}
+
 async function main() {
   await seedColors()
   await seedShippingZones()
   await seedSettings()
+  await seedDiscounts()
   const created = await seedProducts()
   const [products, variants] = await Promise.all([prisma.product.count(), prisma.variant.count()])
   console.log(`Seed completado: ${created} productos nuevos (${products} en total, ${variants} variantes).`)
