@@ -127,7 +127,9 @@ model ProductImage {
 
 model AdminUser {
   id           String    @id @default(cuid())
-  email        String    @unique
+  /// Se puede entrar con el email o con el nombre de usuario (al menos uno de los dos)
+  email        String?   @unique
+  username     String?   @unique
   name         String
   /// argon2id
   passwordHash String

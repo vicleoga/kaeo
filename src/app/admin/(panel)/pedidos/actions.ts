@@ -26,7 +26,7 @@ const done = (orderId: string, ok: string): OrderActionState => {
 async function run(orderId: string, ok: string, fn: (actor: string) => Promise<unknown>): Promise<OrderActionState> {
   const admin = await requireAdmin()
   try {
-    await fn(`admin:${admin.email}`)
+    await fn(`admin:${admin.login}`)
     return done(orderId, ok)
   } catch (e) {
     if (e instanceof OrderError) return { error: e.message }
@@ -55,7 +55,7 @@ export async function cancel(orderId: string, _prev: OrderActionState, formData:
 
 export async function resendToProduction(orderId: string): Promise<OrderActionState> {
   const admin = await requireAdmin()
-  const r = await submitToProduction(orderId, `admin:${admin.email}`)
+  const r = await submitToProduction(orderId, `admin:${admin.login}`)
   if (!r.ok) return { error: `No se ha podido enviar: ${r.error}` }
   return done(orderId, 'skipped' in r && r.skipped ? 'El pedido no tiene artículos bajo demanda.' : 'Enviado a producción.')
 }

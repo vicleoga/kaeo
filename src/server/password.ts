@@ -15,7 +15,8 @@ export async function verifyPassword(passwordHash: string, password: string) {
 
 /** Requisitos mínimos de una contraseña de administración. Devuelve el problema o null. */
 export function passwordProblem(password: string): string | null {
-  if (password.length < 12) return 'La contraseña debe tener al menos 12 caracteres.'
+  // Mínimo 8 por decisión del equipo. Recomendado usar más larga en cuanto el admin esté en internet.
+  if (password.length < 8) return 'La contraseña debe tener al menos 8 caracteres.'
   if (password.length > 200) return 'La contraseña es demasiado larga.'
   return null
 }

@@ -36,10 +36,12 @@ export async function getCurrentAdmin() {
   if (!token) return null
   const session = await prisma.session.findUnique({
     where: { id: hashToken(token) },
-    include: { user: { select: { id: true, email: true, name: true } } },
+    include: { user: { select: { id: true, email: true, username: true, name: true } } },
   })
   if (!session || session.expiresAt < new Date()) return null
-  return session.user
+  const { id, name, email, username } = session.user
+  // `login`: con qué se identifica (email o nombre de usuario); se usa en el historial de pedidos.
+  return { id, name, email, username, login: email ?? username ?? id }
 }
 
 /**

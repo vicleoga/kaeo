@@ -14,10 +14,10 @@ export default function LoginForm({ next }: { next?: string }) {
         </p>
       )}
       <div>
-        <label htmlFor="email" className="field-label">
-          Email
+        <label htmlFor="login" className="field-label">
+          Usuario o email
         </label>
-        <input id="email" name="email" type="email" autoComplete="username" required className="input" />
+        <input id="login" name="login" type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} required className="input" />
       </div>
       <div>
         <label htmlFor="password" className="field-label">

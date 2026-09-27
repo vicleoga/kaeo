@@ -21,7 +21,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
         </div>
         <AdminNav />
         <div className="hidden px-6 pb-6 md:absolute md:bottom-0 md:block">
-          <p className="truncate text-xs text-washed-black/60" title={admin.email}>
+          <p className="truncate text-xs text-washed-black/60" title={admin.login}>
             {admin.name}
           </p>
           <div className="mt-3 flex gap-4 text-[10px] uppercase tracking-[0.2em]">

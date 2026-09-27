@@ -90,7 +90,8 @@ Pedidos, clientes, descuentos, newsletter y configuración (zonas de envío, IVA
 
 ### Seguridad
 
-- Contraseñas con **argon2id**; mínimo 12 caracteres.
+- Contraseñas con **argon2id**; mínimo 8 caracteres (recomendable más largas cuando el admin esté en internet).
+- Se entra con **nombre de usuario o email** (`npm run admin:create -- --username nombre` o `--email …`).
 - Sesión en base de datos: token aleatorio en cookie `httpOnly` + `SameSite=Lax` (+ `Secure` con HTTPS);
   en la BD solo se guarda su hash. Caducan a las 12 h.
 - **Límite de intentos de login**: 5 por email y 20 por IP cada 15 minutos (contador atómico en PostgreSQL).

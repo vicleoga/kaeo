@@ -12,8 +12,9 @@ export interface LoginState {
   error?: string
 }
 
+// Se entra con el email o con el nombre de usuario.
 const loginSchema = z.object({
-  email: z.email().trim().toLowerCase().max(200),
+  login: z.string().trim().toLowerCase().min(3).max(200),
   password: z.string().min(1).max(200),
 })
 
@@ -25,14 +26,14 @@ const getDummyHash = () => (dummyHash ??= hashPassword('kaeo-dummy-password-for-
 const MINUTES = 15
 
 export async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
-  const parsed = loginSchema.safeParse({ email: formData.get('email'), password: formData.get('password') })
-  if (!parsed.success) return { error: 'Introduce un email y una contraseña válidos.' }
-  const { email, password } = parsed.data
+  const parsed = loginSchema.safeParse({ login: formData.get('login'), password: formData.get('password') })
+  if (!parsed.success) return { error: 'Introduce tu usuario (o email) y la contraseña.' }
+  const { login: identifier, password } = parsed.data
 
-  // Límites: 5 intentos por email y 20 por IP cada 15 minutos.
+  // Límites: 5 intentos por usuario y 20 por IP cada 15 minutos.
   const ip = await clientIp()
   const [byEmail, byIp] = await Promise.all([
-    consumeRateLimit(`login:email:${email}`, 5, MINUTES * 60),
+    consumeRateLimit(`login:user:${identifier}`, 5, MINUTES * 60),
     consumeRateLimit(`login:ip:${ip}`, 20, MINUTES * 60),
   ])
   if (!byEmail.ok || !byIp.ok) {
@@ -40,13 +41,13 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
     return { error: `Demasiados intentos. Vuelve a probar dentro de ${wait} minuto${wait === 1 ? '' : 's'}.` }
   }
 
-  const user = await prisma.adminUser.findUnique({ where: { email } })
+  const user = await prisma.adminUser.findFirst({ where: identifier.includes('@') ? { email: identifier } : { username: identifier } })
   const valid = user
     ? await verifyPassword(user.passwordHash, password)
     : (await verifyPassword(await getDummyHash(), password), false)
-  if (!user || !valid) return { error: 'Email o contraseña incorrectos.' }
+  if (!user || !valid) return { error: 'Usuario o contraseña incorrectos.' }
 
-  await resetRateLimit(`login:email:${email}`)
+  await resetRateLimit(`login:user:${identifier}`)
   await prisma.adminUser.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } })
   await createSession(user.id)
 
