@@ -33,6 +33,7 @@ const refresh = (productId?: string) => {
 export async function saveProduct(productId: string | null, _prev: FormState, formData: FormData): Promise<FormState> {
   await requireAdmin()
   const raw = productFormData(formData)
+  // (las fotos no se devuelven en `values`: un <input type=file> no se puede rellenar de nuevo)
   const parsed = productSchema.safeParse(raw)
   if (!parsed.success) return { error: 'Revisa los campos marcados.', fields: fieldErrors(parsed.error), values: raw }
   const { price, vatRate, colorIds, sizes, sizeGuide, ...data } = parsed.data
@@ -66,9 +67,38 @@ export async function saveProduct(productId: string | null, _prev: FormState, fo
     return { error: 'No se ha podido guardar. Inténtalo de nuevo.', values: raw }
   }
 
+  // Fotos subidas en el mismo formulario de alta (el texto alternativo por defecto es el nombre)
+  let photoProblems = 0
+  if (!productId) {
+    const files = formData.getAll('files').filter((f): f is File => f instanceof File && f.size > 0).slice(0, MAX_FILES)
+    photoProblems = (await addImages(id!, files, null, data.name)).length
+  }
+
   refresh(id!)
-  if (!productId) redirect(`/admin/productos/${id}?creado=1`)
+  if (!productId) redirect(`/admin/productos/${id}?creado=1${photoProblems ? `&fotosFallidas=${photoProblems}` : ''}`)
   return { ok: 'Producto guardado.' }
+}
+
+const MAX_FILES = 12
+
+/** Procesa y guarda fotos de un producto. Devuelve los mensajes de las que no se han podido subir. */
+async function addImages(productId: string, files: File[], colorId: string | null, defaultAlt = '') {
+  const last = await prisma.productImage.findFirst({ where: { productId }, orderBy: { sortOrder: 'desc' } })
+  let order = (last?.sortOrder ?? -1) + 1
+  const problems: string[] = []
+  for (const file of files) {
+    try {
+      const stored = await storeProductImage(file, productId)
+      await prisma.productImage.create({ data: { productId, ...stored, colorId, alt: defaultAlt, sortOrder: order++ } })
+    } catch (e) {
+      if (e instanceof ImageError) problems.push(e.message)
+      else {
+        console.error('addImages', e)
+        problems.push(`${file.name}: error al guardar.`)
+      }
+    }
+  }
+  return problems
 }
 
 export async function deleteProduct(productId: string) {
@@ -146,24 +176,10 @@ export async function uploadImages(productId: string, _prev: FormState, formData
   await requireAdmin()
   const files = formData.getAll('files').filter((f): f is File => f instanceof File && f.size > 0)
   if (!files.length) return { error: 'Elige al menos una foto.' }
-  if (files.length > 12) return { error: 'Sube como máximo 12 fotos a la vez.' }
+  if (files.length > MAX_FILES) return { error: `Sube como máximo ${MAX_FILES} fotos a la vez.` }
 
   const colorId = String(formData.get('colorId') ?? '') || null
-  const last = await prisma.productImage.findFirst({ where: { productId }, orderBy: { sortOrder: 'desc' } })
-  let order = (last?.sortOrder ?? -1) + 1
-  const problems: string[] = []
-  for (const file of files) {
-    try {
-      const stored = await storeProductImage(file, productId)
-      await prisma.productImage.create({ data: { productId, ...stored, colorId, alt: '', sortOrder: order++ } })
-    } catch (e) {
-      if (e instanceof ImageError) problems.push(e.message)
-      else {
-        console.error('uploadImages', e)
-        problems.push(`${file.name}: error al guardar.`)
-      }
-    }
-  }
+  const problems = await addImages(productId, files, colorId)
   refresh(productId)
   if (problems.length) return { error: problems.join(' ') }
   return { ok: files.length === 1 ? 'Foto subida. Añade su texto alternativo.' : `${files.length} fotos subidas. Añade su texto alternativo.` }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, type ReactNode } from 'react'
+import { useActionState, useEffect, useState, type ReactNode } from 'react'
 import { saveProduct, type FormState } from './actions'
 
 export interface ProductFormValues {
@@ -63,6 +63,51 @@ function Field({ name, label, hint, error, children }: { name: string; label: st
   )
 }
 
+/** Fotos en el alta: se eligen aquí y se suben al pulsar "Crear producto". */
+function NewPhotos() {
+  const [previews, setPreviews] = useState<{ url: string; name: string; tooBig: boolean }[]>([])
+  useEffect(() => () => previews.forEach((p) => URL.revokeObjectURL(p.url)), [previews])
+  return (
+    <section className="admin-card space-y-4">
+      <div>
+        <h2 className="admin-h2">Fotos</h2>
+        <p className="field-hint">
+          Se suben al crear el producto (la primera será la principal). Después podrás ordenarlas, asignarles un color y escribir su
+          texto alternativo.
+        </p>
+      </div>
+      <input
+        id="files"
+        name="files"
+        type="file"
+        multiple
+        accept="image/jpeg,image/png,image/webp,image/avif"
+        onChange={(e) =>
+          setPreviews(
+            [...(e.target.files ?? [])].slice(0, 12).map((f) => ({ url: URL.createObjectURL(f), name: f.name, tooBig: f.size > 15 * 1024 * 1024 })),
+          )
+        }
+        className="block w-full text-sm file:mr-4 file:border file:border-washed-black/40 file:bg-transparent file:px-4 file:py-2 file:text-[10px] file:uppercase file:tracking-[0.2em]"
+        aria-describedby="files-hint"
+      />
+      <p id="files-hint" className="field-hint">
+        JPG, PNG, WebP o AVIF · máx. 15 MB cada una · hasta 12
+      </p>
+      {previews.length > 0 && (
+        <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+          {previews.map((p, i) => (
+            <li key={p.url} className="relative">
+              <img src={p.url} alt="" className="aspect-[4/5] w-full object-cover" />
+              {i === 0 && <span className="badge absolute left-1 top-1 bg-washed-black text-offwhite">Principal</span>}
+              {p.tooBig && <span className="badge absolute inset-x-1 bottom-1 bg-terracotta text-offwhite">Supera 15 MB</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 interface Props {
   productId: string | null
   colors: { id: string; name: string; hex: string }[]
@@ -113,6 +158,8 @@ export default function ProductForm({ productId, colors, initial = EMPTY }: Prop
           </Field>
         </div>
       </section>
+
+      {!productId && <NewPhotos />}
 
       <section className="admin-card space-y-5">
         <h2 className="admin-h2">Precio y stock</h2>

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { prisma } from '@/server/db'
 import { formatCents } from '@/lib/catalog'
+import DeleteProductButton from './DeleteProductButton'
 import type { Prisma } from '@/generated/prisma/client'
 
 export const metadata = { title: 'Productos' }
@@ -75,15 +76,14 @@ export default async function ProductsPage({
       </form>
 
       <div className="overflow-x-auto">
-        <table className="admin-table min-w-[720px]">
+        <table className="admin-table min-w-[500px]">
           <thead>
             <tr>
               <th className="w-16">Foto</th>
               <th>Producto</th>
-              <th>Categoría</th>
               <th>Precio</th>
               <th>Stock</th>
-              <th>Estado</th>
+              <th className="text-right">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -91,24 +91,23 @@ export default async function ProductsPage({
               const low = p.stockMode === 'OWN_STOCK' && p.variants.some((v) => v.stock <= v.lowStockThreshold)
               const total = p.variants.reduce((n, v) => n + v.stock, 0)
               const img = p.images[0]
+              const href = `/admin/productos/${p.id}`
               return (
                 <tr key={p.id} className="hover:bg-white/60">
                   <td>
-                    {img ? (
-                      <img src={img.thumbUrl ?? img.url} alt="" className="h-14 w-11 object-cover" />
-                    ) : (
-                      <span className="block h-14 w-11 bg-sand/40" />
-                    )}
+                    <Link href={href} tabIndex={-1} aria-hidden="true">
+                      {img ? <img src={img.thumbUrl ?? img.url} alt="" className="h-14 w-11 object-cover" /> : <span className="block h-14 w-11 bg-sand/40" />}
+                    </Link>
                   </td>
                   <td>
-                    <Link href={`/admin/productos/${p.id}`} className="font-medium hover:underline">
+                    <Link href={href} className="font-medium underline decoration-washed-black/20 underline-offset-4 hover:decoration-washed-black">
                       {p.name}
                     </Link>
-                    <span className="block text-xs text-washed-black/55">
-                      {p.code} · {p.variants.length} variantes
+                    <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-washed-black/55">
+                      <span className={`badge ${p.status === 'PUBLISHED' ? 'bg-sage/25 text-washed-black' : 'bg-washed-black/5 text-washed-black/60'}`}>{STATUS[p.status]}</span>
+                      {p.category === 'HOMBRE' ? 'Hombre' : 'Mujer'} · {p.code} · {p.variants.length} variantes
                     </span>
                   </td>
-                  <td className="text-xs uppercase tracking-[0.15em]">{p.category === 'HOMBRE' ? 'Hombre' : 'Mujer'}</td>
                   <td className="tabular-nums">{formatCents(p.priceCents)}</td>
                   <td className="text-xs">
                     {STOCK[p.stockMode]}
@@ -119,16 +118,19 @@ export default async function ProductsPage({
                     )}
                   </td>
                   <td>
-                    <span className={`badge ${p.status === 'PUBLISHED' ? 'bg-sage/25' : 'bg-washed-black/5 text-washed-black/60'}`}>
-                      {STATUS[p.status]}
-                    </span>
+                    <div className="flex justify-end gap-2">
+                      <Link href={href} className="btn-secondary px-3 py-1.5">
+                        Editar
+                      </Link>
+                      <DeleteProductButton productId={p.id} name={p.name} compact />
+                    </div>
                   </td>
                 </tr>
               )
             })}
             {products.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-10 text-center text-washed-black/60">
+                <td colSpan={5} className="py-10 text-center text-washed-black/60">
                   No hay productos con esos filtros.
                 </td>
               </tr>

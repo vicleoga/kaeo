@@ -14,10 +14,10 @@ export default async function EditProductPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ creado?: string }>
+  searchParams: Promise<{ creado?: string; fotosFallidas?: string }>
 }) {
   const { id } = await params
-  const { creado } = await searchParams
+  const { creado, fotosFallidas } = await searchParams
   const [product, colors] = await Promise.all([
     prisma.product.findUnique({
       where: { id },
@@ -55,7 +55,18 @@ export default async function EditProductPage({
         <DeleteProductButton productId={product.id} name={product.name} />
       </header>
 
-      {creado && <p className="alert-ok">Producto creado. Ahora sube sus fotos y revisa las variantes.</p>}
+      {creado && <p className="alert-ok">Producto creado. Revisa sus fotos (texto alternativo y color) y las variantes.</p>}
+      {fotosFallidas && (
+        <p className="alert-error">
+          {fotosFallidas} foto(s) no se han podido subir (formato no admitido, más de 15 MB o archivo dañado). Puedes volver a subirlas abajo.
+        </p>
+      )}
+
+      <ImagesManager
+        productId={product.id}
+        colors={colors.filter((c) => activeColorIds.includes(c.id))}
+        images={product.images.map((i) => ({ id: i.id, url: i.thumbUrl ?? i.url, alt: i.alt, colorId: i.colorId }))}
+      />
 
       <ProductForm
         productId={product.id}
@@ -82,11 +93,6 @@ export default async function EditProductPage({
         }}
       />
 
-      <ImagesManager
-        productId={product.id}
-        colors={colors.filter((c) => activeColorIds.includes(c.id))}
-        images={product.images.map((i) => ({ id: i.id, url: i.thumbUrl ?? i.url, alt: i.alt, colorId: i.colorId }))}
-      />
 
       <VariantsForm
         productId={product.id}
