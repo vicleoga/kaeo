@@ -1,46 +1,119 @@
 import Link from 'next/link'
 import { prisma } from '@/server/db'
 import { lowStockVariants } from '@/server/products'
+import { formatCents } from '@/lib/catalog'
+import { SALE_STATUSES, STATUS_BADGE, STATUS_LABEL } from '@/lib/orderStatus'
 
 export const metadata = { title: 'Dashboard' }
 
+const DAY = 86_400_000
+const dateFmt = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Madrid' })
+
 export default async function DashboardPage() {
-  const [published, drafts, variants, allLowStock, zones] = await Promise.all([
+  const now = Date.now()
+  const since30 = new Date(now - 30 * DAY)
+  const [sales30, salesToday, recent, needsReview, stuck, published, allLowStock, zones] = await Promise.all([
+    prisma.order.aggregate({ where: { status: { in: SALE_STATUSES }, paidAt: { gte: since30 } }, _sum: { totalCents: true }, _count: true }),
+    prisma.order.aggregate({
+      where: { status: { in: SALE_STATUSES }, paidAt: { gte: new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Madrid' })) } },
+      _sum: { totalCents: true },
+      _count: true,
+    }),
+    prisma.order.findMany({ orderBy: { createdAt: 'desc' }, take: 6, include: { customer: { select: { name: true } } } }),
+    prisma.order.findMany({ where: { status: 'NEEDS_REVIEW' }, orderBy: { updatedAt: 'desc' }, take: 10 }),
+    // Pagados hace más de 48 h que no han avanzado (ni a producción ni enviados)
+    prisma.order.findMany({ where: { status: 'PAID', paidAt: { lt: new Date(now - 2 * DAY) } }, orderBy: { paidAt: 'asc' }, take: 10 }),
     prisma.product.count({ where: { status: 'PUBLISHED' } }),
-    prisma.product.count({ where: { status: 'DRAFT' } }),
-    prisma.variant.count({ where: { active: true } }),
     lowStockVariants(1000),
     prisma.shippingZone.findMany({ orderBy: { sortOrder: 'asc' } }),
   ])
-  const lowStock = allLowStock.slice(0, 8)
+  const lowStock = allLowStock.slice(0, 6)
+  const revenue30 = sales30._sum.totalCents ?? 0
+  const attention = [
+    ...needsReview.map((o) => ({ id: o.id, number: o.number, reason: 'Requiere revisión' })),
+    ...stuck.map((o) => ({ id: o.id, number: o.number, reason: 'Pagado hace más de 48 h sin enviar a producción ni enviar' })),
+  ]
 
   const stats = [
-    { label: 'Productos publicados', value: published, href: '/admin/productos?estado=PUBLISHED' },
-    { label: 'Borradores', value: drafts, href: '/admin/productos?estado=DRAFT' },
-    { label: 'Variantes activas', value: variants, href: '/admin/productos' },
-    { label: 'Stock bajo', value: allLowStock.length, href: '/admin/inventario?bajo=1' },
+    { label: 'Ventas últimos 30 días', value: formatCents(revenue30), href: '/admin/pedidos' },
+    { label: 'Pedidos últimos 30 días', value: sales30._count, href: '/admin/pedidos' },
+    { label: 'Ticket medio', value: sales30._count ? formatCents(Math.round(revenue30 / sales30._count)) : '—', href: '/admin/pedidos' },
+    { label: `Hoy · ${salesToday._count} pedido(s)`, value: formatCents(salesToday._sum.totalCents ?? 0), href: '/admin/pedidos' },
   ]
 
   return (
     <div className="space-y-10">
       <header>
         <h1 className="admin-h1">Dashboard</h1>
-        <p className="mt-2 text-sm text-washed-black/60">Resumen de la tienda.</p>
+        <p className="mt-2 text-sm text-washed-black/60">
+          Resumen de la tienda · {published} productos publicados. Las ventas cuentan los pedidos cobrados (no los reembolsados ni cancelados).
+        </p>
       </header>
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4" aria-label="Indicadores">
         {stats.map((s) => (
           <Link key={s.label} href={s.href} className="admin-card transition-colors hover:border-washed-black/30">
-            <p className="text-3xl font-light">{s.value}</p>
+            <p className="text-2xl font-light tabular-nums md:text-3xl">{s.value}</p>
             <p className="label mt-3 text-washed-black/60">{s.label}</p>
           </Link>
         ))}
       </section>
 
+      {attention.length > 0 && (
+        <section className="border border-terracotta/40 bg-terracotta/5 p-5 md:p-7" aria-labelledby="atencion">
+          <h2 id="atencion" className="admin-h2 text-terracotta">
+            Requieren atención ({attention.length})
+          </h2>
+          <ul className="mt-4 space-y-2 text-sm">
+            {attention.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-center justify-between gap-2">
+                <Link href={`/admin/pedidos/${a.id}`} className="font-mono text-xs font-medium underline underline-offset-4">
+                  {a.number}
+                </Link>
+                <span className="text-xs text-washed-black/70">{a.reason}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="admin-card">
           <div className="flex items-center justify-between">
-            <h2 className="admin-h2">Requiere atención · stock bajo</h2>
+            <h2 className="admin-h2">Pedidos recientes</h2>
+            <Link href="/admin/pedidos" className="text-[10px] uppercase tracking-[0.2em] text-washed-black/60 hover:text-washed-black">
+              Todos →
+            </Link>
+          </div>
+          {recent.length === 0 ? (
+            <p className="mt-6 text-sm text-washed-black/60">Todavía no hay pedidos.</p>
+          ) : (
+            <table className="admin-table mt-4">
+              <tbody>
+                {recent.map((o) => (
+                  <tr key={o.id}>
+                    <td>
+                      <Link href={`/admin/pedidos/${o.id}`} className="font-mono text-xs font-medium hover:underline">
+                        {o.number}
+                      </Link>
+                      <span className="block text-xs text-washed-black/55">
+                        {o.customer.name} · {dateFmt.format(o.createdAt)}
+                      </span>
+                    </td>
+                    <td className="text-right tabular-nums">{formatCents(o.totalCents)}</td>
+                    <td className="text-right">
+                      <span className={`badge ${STATUS_BADGE[o.status]}`}>{STATUS_LABEL[o.status]}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        <section className="admin-card">
+          <div className="flex items-center justify-between">
+            <h2 className="admin-h2">Stock bajo ({allLowStock.length})</h2>
             <Link href="/admin/inventario?bajo=1" className="text-[10px] uppercase tracking-[0.2em] text-washed-black/60 hover:text-washed-black">
               Inventario →
             </Link>
@@ -49,12 +122,6 @@ export default async function DashboardPage() {
             <p className="mt-6 text-sm text-washed-black/60">Todo en orden: ninguna variante por debajo de su aviso.</p>
           ) : (
             <table className="admin-table mt-4">
-              <thead>
-                <tr>
-                  <th>Variante</th>
-                  <th className="text-right">Stock</th>
-                </tr>
-              </thead>
               <tbody>
                 {lowStock.map((v) => (
                   <tr key={v.id}>
@@ -72,14 +139,6 @@ export default async function DashboardPage() {
               </tbody>
             </table>
           )}
-        </section>
-
-        <section className="admin-card">
-          <h2 className="admin-h2">Ventas y pedidos</h2>
-          <p className="mt-6 text-sm leading-6 text-washed-black/60">
-            Las ventas, los pedidos recientes y los pedidos que requieren revisión aparecerán aquí en la fase 4, cuando la tienda
-            tenga checkout.
-          </p>
           <h2 className="admin-h2 mt-8">Zonas de envío</h2>
           <ul className="mt-4 space-y-2 text-sm">
             {zones.map((z) => (
@@ -91,7 +150,9 @@ export default async function DashboardPage() {
               </li>
             ))}
           </ul>
-          <p className="field-hint mt-4">Se podrán editar desde Configuración en la fase 4.</p>
+          <Link href="/admin/configuracion" className="field-hint mt-4 inline-block underline underline-offset-4">
+            Editar en Configuración
+          </Link>
         </section>
       </div>
     </div>

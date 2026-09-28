@@ -4,8 +4,9 @@ Tienda online de **KAEO**: camisetas y básicos de estilo mediterráneo, minimal
 Todo el diseño parte del moodboard oficial de la marca (`public/images/moodboard/kaeo-moodboard.webp`).
 
 > **Estado:** en migración de landing estática a tienda completa (Next.js + PostgreSQL), por fases.
-> Hecho: **1** nuevo stack · **2** base de datos y administración de productos · **3** catálogo, ficha y carrito con tallas.
-> Siguiente: 4 checkout y pedidos.
+> Hecho: **1** nuevo stack · **2** base de datos y administración de productos · **3** catálogo, ficha y carrito con tallas ·
+> **4** checkout, pedidos, pagos y producción (simulados), descuentos y configuración.
+> Siguiente: 5 emails, newsletter y páginas legales. Pruebas en https://staging.kaeo.es
 > La versión estática anterior sigue publicada en https://vicleoga.github.io/kaeo/ (rama `gh-pages`,
 > congelada) hasta que la tienda esté desplegada en Hetzner.
 
@@ -86,7 +87,40 @@ Máximo 10 unidades por línea y nunca más que el stock en productos de stock p
   - Bajo demanda (sin límite de stock) o stock propio.
 - **Inventario**: stock por variante de los productos con stock propio, filtro de stock bajo y guardado en bloque.
 
-Pedidos, clientes, descuentos, newsletter y configuración (zonas de envío, IVA, empresa) llegan en las fases 4 y 5.
+- **Pedidos**: listado con filtros y búsqueda; ficha con artículos, totales e IVA, historial de estados, pagos y reembolsos,
+  producción y seguimiento, cliente y dirección. Acciones: cambiar estado (solo transiciones permitidas), reembolsar,
+  cancelar (reembolsa si estaba cobrado y repone el stock propio), reenviar a producción, marcar como enviado a mano,
+  notas internas y, con el proveedor simulado, botones que envían los webhooks de "en producción / enviado / entregado / fallo".
+- **Clientes**: se crean al comprar (sin cuenta); pedidos, gasto y consentimiento de newsletter.
+- **Descuentos**: porcentaje o importe, pedido mínimo, fechas de inicio y caducidad (hora de Madrid) y límite de usos.
+- **Configuración**: zonas de envío (activar/desactivar, precio, envío gratis, plazo), IVA general y datos de la empresa.
+- **Dashboard**: ventas y ticket medio (30 días y hoy), pedidos recientes, pedidos que requieren atención y stock bajo.
+
+Newsletter y plantillas de email llegan en la fase 5.
+
+## Pedidos y pagos
+
+**Estados:** pendiente de pago → pagado → enviado a producción → en producción → enviado → entregado, más cancelado,
+pago fallido, reembolsado y **requiere revisión** (p. ej. se cobró pero el envío a producción falló 3 veces, o no quedaba
+stock al confirmar el pago). Todas las transiciones pasan por `src/server/orders.ts` y quedan en el historial.
+Cada pedido guarda una copia de productos, precios, IVA y dirección del momento de la compra.
+
+**Checkout:** los importes se calculan siempre en el servidor (`src/server/pricing.ts`): precio vigente, descuento
+repartido entre líneas, envío según la zona del código postal e IVA incluido desglosado. Pulsar "Pagar" dos veces no
+duplica el pedido (clave de idempotencia). El stock propio se descuenta al confirmarse el pago, de forma atómica.
+
+**Proveedores simulados** (`PAYMENT_PROVIDER=mock`, `FULFILLMENT_PROVIDER=mock`):
+- Pago: la pasarela `/mock/pago/…` tiene botones de pago correcto y fallido y envía un **webhook firmado** a
+  `/api/webhooks/pago`, como haría Stripe.
+- Producción: acepta los pedidos (o los rechaza con `FULFILLMENT_MOCK_FAIL=true` o si la dirección contiene
+  "FALLO PRODUCCION"); los avances se simulan desde la ficha del pedido en el admin.
+
+**Webhooks** (`/api/webhooks/pago`, `/api/webhooks/produccion`): firma HMAC-SHA256 con marca de tiempo (máx. 5 min,
+comparación en tiempo constante) e **idempotencia** (cada evento se procesa una sola vez). Para probarlos a mano:
+`node scripts/send-test-webhook.mjs pago '{"eventId":"evt_1","type":"payment.succeeded","providerRef":"mock_pay_…"}'`.
+
+**Cliente:** `/pedido/<número>?t=<token>` (confirmación y seguimiento sin cuenta) y `/seguimiento` (número + email,
+con límite de consultas).
 
 ### Seguridad
 
