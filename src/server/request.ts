@@ -7,7 +7,9 @@ import { headers } from 'next/headers'
  */
 export async function clientIp() {
   const h = await headers()
-  return h.get('x-forwarded-for')?.split(',')[0]?.trim() || h.get('x-real-ip') || 'desconocida'
+  // Detrás del túnel de Cloudflare la IP real llega en CF-Connecting-IP. La app solo escucha en
+  // la propia máquina (no es accesible desde fuera), así que estas cabeceras son fiables.
+  return h.get('cf-connecting-ip') || h.get('x-forwarded-for')?.split(',')[0]?.trim() || h.get('x-real-ip') || 'desconocida'
 }
 
 export async function userAgent() {

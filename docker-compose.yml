@@ -1,11 +1,12 @@
-# Tienda KAEO: aplicación + PostgreSQL.
+# Tienda KAEO: aplicación + PostgreSQL (+ túnel de Cloudflare opcional).
 #
 #   cp .env.example .env                                      (y rellena las contraseñas)
 #   docker compose up -d --build                              → aplica migraciones y arranca la web
 #   docker compose run --rm migrate npm run db:seed           → datos de prueba (catálogo de ejemplo)
-#   docker compose run --rm migrate npm run admin:create -- --email tu@correo.com
+#   docker compose run --rm migrate npm run admin:create -- --username tu_usuario
 #
-# En la fase 6 se añade Caddy delante (HTTPS) y las copias de seguridad.
+# Publicación en internet: con COMPOSE_PROFILES=tunnel en .env se arranca también el túnel de
+# Cloudflare (servicio `tunnel`), que saca la web a https://<dominio> sin abrir puertos del router.
 
 services:
   app:
@@ -13,11 +14,14 @@ services:
       context: .
       args:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_SITE_ENV: ${NEXT_PUBLIC_SITE_ENV:-production}
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
     ports:
-      - "${APP_PORT:-3000}:3000"
+      # Solo accesible desde la propia máquina: Docker se salta el cortafuegos si publica hacia fuera.
+      # Desde internet se entra por el túnel; en local, por http://localhost:3000.
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-3000}:3000"
     volumes:
       - uploads:/app/uploads
     depends_on:
@@ -35,6 +39,7 @@ services:
       target: build
       args:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+        NEXT_PUBLIC_SITE_ENV: ${NEXT_PUBLIC_SITE_ENV:-production}
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
@@ -43,6 +48,19 @@ services:
       db:
         condition: service_healthy
     restart: "no"
+
+  # Túnel de Cloudflare: conexión SALIENTE hacia Cloudflare, que publica la web con HTTPS.
+  # El token se crea en Cloudflare → Zero Trust → Networks → Tunnels (ver README, "Despliegue").
+  # En el túnel, el "Public hostname" debe apuntar a  http://app:3000
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - app
+    restart: unless-stopped
+    profiles: [tunnel]
 
   db:
     image: postgres:16-alpine

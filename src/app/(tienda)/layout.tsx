@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import SiteChrome from '@/components/SiteChrome'
 import Footer from '@/components/Footer'
+import StagingBanner from '@/components/StagingBanner'
 import { listStoreProducts } from '@/server/catalog'
 import { freeShippingThreshold } from '@/server/shipping'
 
@@ -21,6 +22,7 @@ export default async function StoreLayout({ children }: { children: ReactNode })
       <SiteChrome products={products} freeShippingFromCents={freeShippingFromCents} />
       <main id="contenido">{children}</main>
       <Footer />
+      <StagingBanner />
     </>
   )
 }

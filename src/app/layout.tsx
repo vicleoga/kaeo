@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import { Jost, Mrs_Saint_Delafield } from 'next/font/google'
 import { CartProvider } from '@/context/CartContext'
+import { isStaging } from '@/lib/env'
 import './globals.css'
 
 // next/font descarga las fuentes al compilar y las sirve desde nuestro dominio:
@@ -20,6 +21,8 @@ export const metadata: Metadata = {
   description:
     'KAEO — Clothes for a brighter tomorrow. Camisetas y básicos de algodón orgánico y lino con espíritu mediterráneo.',
   icons: { icon: '/favicon.svg' },
+  // La tienda de pruebas no se indexa
+  ...(isStaging ? { robots: { index: false, follow: false } } : {}),
   openGraph: {
     type: 'website',
     locale: 'es_ES',

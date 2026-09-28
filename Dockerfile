@@ -17,7 +17,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Las variables NEXT_PUBLIC_* se incrustan en el build.
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
+ARG NEXT_PUBLIC_SITE_ENV=production
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
+    NEXT_PUBLIC_SITE_ENV=$NEXT_PUBLIC_SITE_ENV \
     NEXT_OUTPUT=standalone \
     NEXT_TELEMETRY_DISABLED=1
 # npm run build = prisma generate + next build

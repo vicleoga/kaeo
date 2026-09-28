@@ -191,4 +191,63 @@ Las fotos reales se suben desde el admin.
 
 ## Despliegue
 
-Se documentará en la fase 6 (Hetzner + Docker + Caddy con HTTPS + copias de seguridad de la BD y de las fotos).
+Cualquier servidor Linux con Docker (x86 o ARM64) sirve: hoy **staging.kaeo.es** corre en una
+**Raspberry Pi 5** en casa; para el lanzamiento se recomienda un VPS (p. ej. Hetzner). Los pasos son los mismos.
+
+La web se publica con **Cloudflare Tunnel**: el servidor abre una conexión *saliente* hacia Cloudflare,
+que sirve la web con HTTPS. No hay que abrir puertos del router ni tener IP fija, y la app solo
+escucha en `127.0.0.1` (no es accesible desde fuera salvo por el túnel).
+
+### 1. Servidor
+
+Ubuntu Server 24.04 con acceso SSH por clave. Preparación (una vez):
+
+- Actualizaciones de seguridad automáticas (`unattended-upgrades`).
+- Cortafuegos `ufw`: todo cerrado salvo SSH desde la red local.
+- Docker desde el repositorio oficial (`docker-ce` + `docker-compose-plugin`), con logs limitados a 30 MB.
+- En Raspberry Pi por Wi-Fi: desactivar el ahorro de energía del Wi-Fi y añadir DNS de respaldo.
+
+### 2. Túnel en Cloudflare (dominio ya gestionado por Cloudflare)
+
+1. Cloudflare → **Zero Trust** → **Networks** → **Tunnels** → **Create a tunnel** → *Cloudflared*.
+2. Nombre, p. ej. `kaeo-staging`. En "Install connector" elige **Docker** y copia **solo el token**
+   (la cadena larga que va después de `--token`).
+3. **Public hostname**: subdominio `staging`, dominio `kaeo.es`, servicio **HTTP** → `app:3000`.
+
+### 3. Aplicación
+
+```bash
+git clone -b migracion-next https://github.com/vicleoga/kaeo.git && cd kaeo
+cp .env.example .env
+```
+
+En `.env` (contraseñas largas y aleatorias: `openssl rand -hex 24`):
+
+```ini
+NEXT_PUBLIC_SITE_URL=https://staging.kaeo.es
+NEXT_PUBLIC_SITE_ENV=staging          # production en la tienda real
+POSTGRES_PASSWORD=<aleatoria>
+DATABASE_URL=postgresql://kaeo:<la misma>@localhost:5432/kaeo?schema=public
+COMPOSE_PROFILES=tunnel
+CLOUDFLARE_TUNNEL_TOKEN=<token del paso 2>
+PAYMENT_WEBHOOK_SECRET=<aleatoria>
+FULFILLMENT_WEBHOOK_SECRET=<aleatoria>
+```
+
+```bash
+docker compose up -d --build                                  # la primera vez tarda (compila)
+docker compose run --rm migrate npm run db:seed               # opcional: catálogo de ejemplo
+docker compose run --rm migrate npm run admin:create -- --username <usuario> --password '<contraseña>'
+```
+
+### 4. Copias de seguridad
+
+`scripts/backup.sh` guarda la base de datos y las fotos en `~/kaeo-backups` (se conservan 14 días) y
+`scripts/restore.sh` las recupera. En el servidor se programan a diario con un temporizador systemd
+(`kaeo-backup.timer`, 03:30). Conviene copiar de vez en cuando `~/kaeo-backups` fuera del servidor.
+
+### 5. Actualizar a una versión nueva
+
+```bash
+cd ~/kaeo && git pull && docker compose up -d --build   # las migraciones se aplican solas
+```
