@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { prisma } from '@/server/db'
 import { requireAdmin } from '@/server/auth'
 import { addOrderNote, cancelOrder, markShippedManually, OrderError, refundOrder, submitToProduction, transition } from '@/server/orders'
+import { notifyOrder } from '@/server/notifications'
 import { isMockFulfillment } from '@/server/providers/fulfillment'
 import { buildMockFulfillmentWebhook } from '@/server/providers/fulfillment/mock'
 import { SIGNATURE_HEADER } from '@/server/webhookSignature'
@@ -40,7 +41,12 @@ export async function changeStatus(orderId: string, _prev: OrderActionState, for
   const note = String(formData.get('note') ?? '').trim().slice(0, 500) || undefined
   if (!to.success) return { error: 'Elige un estado.' }
   if (to.data === 'REFUNDED' || to.data === 'CANCELLED') return { error: 'Para cancelar o reembolsar usa sus botones (devuelven el dinero y el stock).' }
-  return run(orderId, 'Estado actualizado.', (actor) => prisma.$transaction((tx) => transition(tx, orderId, to.data, actor, note)))
+  return run(orderId, 'Estado actualizado.', async (actor) => {
+    const changed = await prisma.$transaction((tx) => transition(tx, orderId, to.data, actor, note))
+    // Cambios manuales que el cliente debe saber
+    if (changed && to.data === 'SHIPPED') await notifyOrder(orderId, 'order.shipped')
+    if (changed && to.data === 'DELIVERED') await notifyOrder(orderId, 'order.delivered')
+  })
 }
 
 export async function refund(orderId: string, _prev: OrderActionState, formData: FormData) {

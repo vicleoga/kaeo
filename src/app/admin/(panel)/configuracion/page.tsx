@@ -17,7 +17,7 @@ export default async function SettingsPage() {
     <div className="space-y-8">
       <header>
         <h1 className="admin-h1">Configuración</h1>
-        <p className="mt-2 text-sm text-washed-black/60">Envíos, impuestos y datos de la empresa. Las plantillas de email llegarán en la fase 5.</p>
+        <p className="mt-2 text-sm text-washed-black/60">Envíos, impuestos, comisiones y datos de la empresa. El envío de emails se configura en el servidor (ver Emails).</p>
       </header>
 
       <ShippingZonesForm

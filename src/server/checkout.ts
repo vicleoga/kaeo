@@ -26,7 +26,6 @@ export const checkoutSchema = z.object({
   note: z.string().trim().max(500),
   discountCode: z.string().trim().max(40),
   acceptTerms: z.literal(true, 'Debes aceptar las condiciones de venta'),
-  newsletter: z.boolean(),
 })
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>
@@ -66,8 +65,8 @@ export async function placeOrder(input: CheckoutInput, siteUrl: string): Promise
   const order = await prisma.$transaction(async (tx) => {
     const customer = await tx.customer.upsert({
       where: { email: input.email },
-      update: { name: input.name, phone: input.phone || undefined, ...(input.newsletter ? { marketingOptIn: true } : {}) },
-      create: { email: input.email, name: input.name, phone: input.phone || null, marketingOptIn: input.newsletter },
+      update: { name: input.name, phone: input.phone || undefined },
+      create: { email: input.email, name: input.name, phone: input.phone || null },
     })
     const created = await tx.order.create({
       data: {

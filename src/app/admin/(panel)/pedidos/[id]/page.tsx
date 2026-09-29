@@ -6,6 +6,7 @@ import { STATUS_BADGE, STATUS_LABEL, TRANSITIONS } from '@/lib/orderStatus'
 import { isMockFulfillment } from '@/server/providers/fulfillment'
 import type { ShippingAddress } from '@/server/providers/fulfillment'
 import OrderActions from './OrderActions'
+import { EMAIL_KIND_LABEL, EMAIL_STATUS } from '../../emails/labels'
 
 export const metadata = { title: 'Pedido' }
 
@@ -24,6 +25,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
       events: { orderBy: { createdAt: 'desc' } },
       payments: { orderBy: { createdAt: 'desc' }, include: { refunds: true } },
       fulfillments: { orderBy: { createdAt: 'desc' } },
+      emails: { orderBy: { createdAt: 'desc' }, select: { id: true, kind: true, to: true, status: true, createdAt: true } },
     },
   })
   if (!order) notFound()
@@ -174,6 +176,27 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
             </ol>
           </section>
 
+          <section className="admin-card">
+            <h2 className="admin-h2">Emails</h2>
+            {order.emails.length === 0 ? (
+              <p className="mt-4 text-sm text-washed-black/60">Todavía no se ha enviado ningún email de este pedido.</p>
+            ) : (
+              <ul className="mt-4 space-y-2 text-sm">
+                {order.emails.map((e) => (
+                  <li key={e.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <Link href={`/admin/emails/${e.id}`} className="hover:underline">
+                      {EMAIL_KIND_LABEL[e.kind] ?? e.kind}
+                    </Link>
+                    <span className={`badge ${EMAIL_STATUS[e.status].className}`}>{EMAIL_STATUS[e.status].label}</span>
+                    <span className="text-xs text-washed-black/55">
+                      {e.to} · {dateFmt.format(e.createdAt)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
           <section className="admin-card grid gap-6 md:grid-cols-2">
             <div>
               <h2 className="admin-h2">Pagos</h2>
@@ -235,7 +258,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
               <Link href={`/admin/pedidos?q=${encodeURIComponent(order.email)}`} className="hover:underline">
                 {customerOrders} pedido(s) de este cliente
               </Link>
-              {order.customer.marketingOptIn && ' · acepta newsletter'}
+              
             </p>
             <h2 className="admin-h2 mt-6">Dirección de envío</h2>
             <p className="mt-3">{address.name}</p>

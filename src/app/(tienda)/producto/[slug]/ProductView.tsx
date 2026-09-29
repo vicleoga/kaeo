@@ -168,8 +168,8 @@ export default function ProductView({ product }: { product: ProductDetail }) {
               Envíos y devoluciones <span className="transition-transform group-open:rotate-45" aria-hidden="true">+</span>
             </summary>
             <p className="mt-4 text-sm leading-7 text-washed-black/80">
-              Envío a península y Baleares. Devoluciones gratuitas durante 30 días.{' '}
-              <a href="/envios-devoluciones" className="underline underline-offset-4">
+              Envío a península y Baleares. Tienes 30 días para devolverlo.{' '}
+              <a href="/envios-y-devoluciones" className="underline underline-offset-4">
                 Más información
               </a>
             </p>

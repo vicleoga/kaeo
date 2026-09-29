@@ -215,7 +215,7 @@ model Customer {
   email          String   @unique
   name           String
   phone          String?
-  /// Aceptó recibir la newsletter al comprar (el alta real se gestiona en Subscriber, fase 5)
+  /// Consentimiento de newsletter (sin uso por ahora: la tienda no tiene newsletter)
   marketingOptIn Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -265,6 +265,7 @@ model Order {
   events            OrderStatusEvent[]
   payments          Payment[]
   fulfillments      FulfillmentJob[]
+  emails            EmailLog[]
 
   @@index([status, createdAt])
   @@index([email])
@@ -406,4 +407,45 @@ model DiscountCode {
   description      String       @default("")
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
+}
+
+enum EmailStatus {
+  SENT
+  FAILED
+  /// Proveedor "log": no sale de la tienda, solo se registra (desarrollo y pruebas)
+  LOGGED
+}
+
+/// Registro de cada email que envía la tienda (se puede ver y reenviar desde el admin)
+model EmailLog {
+  id        String      @id @default(cuid())
+  kind      String
+  to        String
+  subject   String
+  html      String
+  text      String
+  replyTo   String?
+  status    EmailStatus
+  provider  String
+  error     String?
+  orderId   String?
+  order     Order?      @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  createdAt DateTime    @default(now())
+
+  @@index([createdAt])
+  @@index([orderId])
+}
+
+/// Mensajes del formulario de contacto
+model ContactMessage {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  orderNumber String?
+  message     String
+  ip          String?
+  handled     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([handled, createdAt])
 }

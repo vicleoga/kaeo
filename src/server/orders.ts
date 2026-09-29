@@ -162,6 +162,7 @@ export async function applyFulfillmentEvent(event: FulfillmentWebhookEvent, acto
     }
   })
   if (changed && to === 'SHIPPED') await notifyOrder(job.orderId, 'order.shipped')
+  if (changed && to === 'DELIVERED') await notifyOrder(job.orderId, 'order.delivered')
   if (changed && to === 'NEEDS_REVIEW') await notifyOrder(job.orderId, 'admin.needs_review')
   return job.orderId
 }

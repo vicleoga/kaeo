@@ -120,3 +120,46 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ───────────── Páginas de texto (legales, envíos, FAQ, nosotros) ───────────── */
+@layer components {
+  .prose-kaeo {
+    @apply text-sm leading-7 text-washed-black/80;
+  }
+  .prose-kaeo h2 {
+    @apply heading mb-4 mt-14 text-[13px] text-washed-black first:mt-0;
+  }
+  .prose-kaeo h3 {
+    @apply mb-2 mt-8 text-sm font-medium text-washed-black;
+  }
+  .prose-kaeo p,
+  .prose-kaeo ul,
+  .prose-kaeo ol {
+    @apply mb-4;
+  }
+  .prose-kaeo ul {
+    @apply list-disc space-y-1.5 pl-5;
+  }
+  .prose-kaeo ol {
+    @apply list-decimal space-y-1.5 pl-5;
+  }
+  .prose-kaeo a {
+    @apply underline underline-offset-4 hover:text-washed-black;
+  }
+  .prose-kaeo strong {
+    @apply font-medium text-washed-black;
+  }
+  .prose-kaeo table {
+    @apply mb-6 w-full border-collapse text-left text-[13px];
+  }
+  .prose-kaeo th {
+    @apply border-b border-washed-black/20 py-2 pr-4 font-medium text-washed-black;
+  }
+  .prose-kaeo td {
+    @apply border-b border-washed-black/10 py-2 pr-4 align-top;
+  }
+  /* Texto pendiente de revisión legal: muy visible a propósito */
+  .revisar {
+    @apply bg-terracotta/15 px-1 text-terracotta;
+  }
+}

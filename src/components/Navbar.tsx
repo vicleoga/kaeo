@@ -11,7 +11,7 @@ const LINKS = [
   { href: '/hombre', label: 'Hombre' },
   { href: '/mujer', label: 'Mujer' },
   { href: '/#coleccion', label: 'Colección' },
-  { href: '/#nosotros', label: 'Nosotros' },
+  { href: '/nosotros', label: 'Nosotros' },
 ]
 
 export default function Navbar({ onSearch }: { onSearch: () => void }) {

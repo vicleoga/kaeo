@@ -43,7 +43,6 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
               <th>Pedidos</th>
               <th className="text-right">Gastado</th>
               <th>Último pedido</th>
-              <th>Newsletter</th>
             </tr>
           </thead>
           <tbody>
@@ -62,13 +61,12 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
                   </td>
                   <td className="text-right tabular-nums">{formatCents(sales.reduce((n, o) => n + o.totalCents, 0))}</td>
                   <td className="text-xs text-washed-black/70">{c.orders[0] ? dateFmt.format(c.orders[0].createdAt) : '—'}</td>
-                  <td className="text-xs">{c.marketingOptIn ? 'Sí' : '—'}</td>
                 </tr>
               )
             })}
             {customers.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-10 text-center text-washed-black/60">
+                <td colSpan={4} className="py-10 text-center text-washed-black/60">
                   Todavía no hay clientes.
                 </td>
               </tr>

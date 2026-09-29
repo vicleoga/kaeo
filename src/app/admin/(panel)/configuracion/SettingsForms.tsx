@@ -168,7 +168,7 @@ export function CompanyForm({ company }: { company: CompanyValues }) {
     <form action={action} className="admin-card space-y-4" noValidate>
       <div>
         <h2 className="admin-h2">Datos de la empresa</h2>
-        <p className="field-hint">Aparecerán en el aviso legal, en las condiciones de venta y en los emails (fase 5).</p>
+        <p className="field-hint">Aparecen en el aviso legal, las condiciones de venta y la política de privacidad. Si no hay EMAIL_ADMIN, los avisos internos llegan al email de contacto.</p>
       </div>
       <Feedback state={state} />
       <div className="grid gap-4 md:grid-cols-2">

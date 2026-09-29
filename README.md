@@ -65,6 +65,10 @@ npm run dev                                      # http://localhost:3000 · admi
 | `/hombre`, `/mujer` | Catálogo con filtros de color y talla y orden (en la URL: `?color=sage&talla=M&orden=precio-asc`) |
 | `/producto/[slug]` | Ficha: galería que cambia con el color, selector de color y talla (agotadas tachadas, aviso de últimas unidades), guía de tallas, composición y cuidados, relacionados. Metadatos SEO/Open Graph y datos estructurados schema.org (`Product`, `AggregateOffer`, `BreadcrumbList`) |
 | `/carrito` | Carrito completo (también hay carrito lateral) |
+| `/nosotros` | La marca |
+| `/contacto` | Formulario de contacto (antispam con campo trampa y límite de 5 mensajes/hora por IP) |
+| `/preguntas-frecuentes`, `/envios-y-devoluciones` | Ayuda. Los precios y plazos de envío salen de las zonas activas de Configuración |
+| `/legal/aviso-legal`, `/legal/condiciones`, `/legal/privacidad`, `/legal/cookies` | Textos legales **de partida**: los datos de empresa salen de Configuración y lo que debe validar la gestoría aparece resaltado como **[REVISAR]** (búscalo en `src/app/(tienda)/legal` y `envios-y-devoluciones`). No debe quedar ninguno antes de abrir al público |
 | `/sitemap.xml`, `/robots.txt` | Para buscadores |
 
 **Carrito:** cada línea es una variante (talla + color). Se guarda en el navegador (sigue ahí al volver y se
@@ -102,7 +106,38 @@ Máximo 10 unidades por línea y nunca más que el stock en productos de stock p
   - Los costes se **copian en el pedido al comprar** (producto y envío) y la comisión **al cobrar**: cambiar un coste después
     no altera los pedidos ya hechos. El seed pone costes de **ejemplo** solo donde no hay ninguno.
 
-Newsletter y plantillas de email llegan en la fase 5.
+- **Mensajes**: los del formulario de contacto, pendientes y atendidos.
+- **Emails**: registro de todos los emails (a clientes y avisos internos) con vista previa tal cual llegan, motivo del
+  fallo si lo hubo, botón de reenviar y un email de prueba para comprobar la configuración. La ficha de cada pedido
+  lista también sus emails.
+
+**Cookies:** la web solo usa almacenamiento técnico (carrito, sesión del admin y protección de Cloudflare), exento de
+consentimiento, así que **no hay banner de cookies**. Si algún día se añade analítica o píxeles de publicidad, hay que
+añadir un banner que pida permiso *antes* de cargarlos y actualizar `/legal/cookies`.
+
+## Emails
+
+Salen solos en cada paso del pedido: **confirmación** (al cobrar), **enviado** (con el seguimiento), **entregado**,
+**reembolso** y **cancelación**; y avisos internos de **pedido nuevo**, **pedido a revisar** y **mensaje de contacto**
+(a `EMAIL_ADMIN`; contestar al aviso de contacto responde directamente al cliente). Plantillas en
+`src/server/emails/templates.ts`. Un fallo de envío nunca bloquea un pedido: queda como *Fallido* en Admin → Emails.
+
+- `EMAIL_PROVIDER=log` (por defecto): no sale nada; se registran y se ven en el admin. Ideal para desarrollo y staging.
+- `EMAIL_PROVIDER=smtp`: envío real. Con el buzón de IONOS:
+
+```ini
+EMAIL_PROVIDER=smtp
+EMAIL_FROM="KAEO <contact@kaeo.es>"
+EMAIL_ADMIN=contact@kaeo.es
+SMTP_HOST=smtp.ionos.es
+SMTP_PORT=587
+SMTP_USER=contact@kaeo.es
+SMTP_PASSWORD=<contraseña del buzón>
+```
+
+Tras cambiarlo: `docker compose up -d` y Admin → Emails → *Enviar prueba*. Para que no acaben en spam, el dominio
+debe tener en Cloudflare los registros **SPF** (`v=spf1 include:_spf-eu.ionos.com ~all`) y **DKIM** que da IONOS,
+y un **DMARC** (p. ej. `v=DMARC1; p=none; rua=mailto:contact@kaeo.es`).
 
 ## Pedidos y pagos
 

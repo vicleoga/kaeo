@@ -1,7 +1,21 @@
+import Link from 'next/link'
 import Logo from './Logo'
 import { InstagramIcon, PinterestIcon, TiktokIcon } from './Icons'
 
-const LEGAL = ['Aviso legal', 'Privacidad', 'Cookies', 'Envíos y devoluciones']
+const HELP = [
+  { href: '/contacto', label: 'Contacto' },
+  { href: '/preguntas-frecuentes', label: 'Preguntas frecuentes' },
+  { href: '/envios-y-devoluciones', label: 'Envíos y devoluciones' },
+  { href: '/seguimiento', label: 'Seguimiento de pedido' },
+  { href: '/nosotros', label: 'Nosotros' },
+]
+
+const LEGAL = [
+  { href: '/legal/aviso-legal', label: 'Aviso legal' },
+  { href: '/legal/condiciones', label: 'Condiciones de venta' },
+  { href: '/legal/privacidad', label: 'Privacidad' },
+  { href: '/legal/cookies', label: 'Cookies' },
+]
 
 const SOCIAL = [
   { href: 'https://instagram.com', label: 'Instagram', Icon: InstagramIcon },
@@ -22,14 +36,26 @@ export default function Footer() {
           <Logo color="#2E2E2E" size={20} className="shrink-0" />
         </div>
 
-        <div className="mt-16 flex flex-col-reverse items-center justify-between gap-8 border-t border-washed-black/10 pt-8 md:flex-row">
+        <nav aria-label="Ayuda" className="mt-14">
+          <ul className="flex flex-wrap justify-center gap-x-8 gap-y-3 text-[11px] uppercase tracking-label text-washed-black/75">
+            {HELP.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className="hover:text-washed-black">
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="mt-12 flex flex-col-reverse items-center justify-between gap-8 border-t border-washed-black/10 pt-8 md:flex-row">
           <ul className="flex flex-wrap justify-center gap-x-6 gap-y-3 text-[10px] uppercase tracking-label text-washed-black/60">
             <li>© {new Date().getFullYear()} KAEO</li>
             {LEGAL.map((l) => (
-              <li key={l}>
-                <a href="#top" className="hover:text-washed-black">
-                  {l}
-                </a>
+              <li key={l.href}>
+                <Link href={l.href} className="hover:text-washed-black">
+                  {l.label}
+                </Link>
               </li>
             ))}
           </ul>

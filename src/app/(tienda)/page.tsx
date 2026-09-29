@@ -3,7 +3,6 @@ import Manifesto from '@/components/Manifesto'
 import CategorySection from '@/components/CategorySection'
 import Palette from '@/components/Palette'
 import Gallery from '@/components/Gallery'
-import Newsletter from '@/components/Newsletter'
 import Reveal from '@/components/Reveal'
 import { listStoreProducts } from '@/server/catalog'
 
@@ -56,7 +55,6 @@ export default async function HomePage() {
       />
       <Palette />
       <Gallery />
-      <Newsletter />
     </>
   )
 }

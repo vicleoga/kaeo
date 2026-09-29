@@ -10,7 +10,8 @@ const ITEMS: { href: string; label: string; soon?: string }[] = [
   { href: '/admin/pedidos', label: 'Pedidos' },
   { href: '/admin/clientes', label: 'Clientes' },
   { href: '/admin/descuentos', label: 'Descuentos' },
-  { href: '/admin/suscriptores', label: 'Newsletter', soon: 'Fase 5' },
+  { href: '/admin/mensajes', label: 'Mensajes' },
+  { href: '/admin/emails', label: 'Emails' },
   { href: '/admin/configuracion', label: 'Configuración' },
 ]
 

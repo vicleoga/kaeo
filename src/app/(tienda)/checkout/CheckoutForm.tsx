@@ -114,7 +114,6 @@ export default function CheckoutForm({ countries }: { countries: { code: string;
       note: s('note'),
       discountCode,
       acceptTerms: f.get('acceptTerms') === 'on',
-      newsletter: f.get('newsletter') === 'on',
     }
     setFormError(null)
     startSubmit(async () => {
@@ -220,10 +219,6 @@ export default function CheckoutForm({ countries }: { countries: { code: string;
               {err('acceptTerms')}
             </p>
           )}
-          <label className="flex items-start gap-3 text-sm leading-6 text-washed-black/80">
-            <input type="checkbox" name="newsletter" className="mt-1 h-4 w-4 accent-washed-black" />
-            <span>Quiero recibir la newsletter de KAEO (opcional; puedes darte de baja cuando quieras).</span>
-          </label>
         </fieldset>
       </div>
 
