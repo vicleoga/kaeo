@@ -113,6 +113,49 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
             </dl>
           </section>
 
+          {order.paidAt && (
+            <section className="admin-card" aria-labelledby="resultado">
+              <h2 id="resultado" className="admin-h2">
+                Resultado de este pedido
+              </h2>
+              {(() => {
+                const goods = order.items.reduce((n, i) => n + (i.unitCostCents ?? 0) * i.quantity, 0)
+                const refunded = order.status === 'REFUNDED' || order.status === 'CANCELLED'
+                const produced = order.fulfillments.some((f) => ['SUBMITTED', 'IN_PRODUCTION', 'SHIPPED', 'DELIVERED'].includes(f.status))
+                const net = refunded ? 0 : order.totalCents - order.taxCents
+                const goodsCost = refunded && !produced ? 0 : goods
+                const shipCost = refunded && !produced ? 0 : order.shippingCostCents
+                const profit = net - goodsCost - shipCost - order.paymentFeeCents
+                const rows: [string, number, string?][] = [
+                  ['Ventas netas (sin IVA)', net, refunded ? 'reembolsado: 0' : undefined],
+                  ['− Coste de producto', goodsCost, refunded && !produced ? 'no llegó a producirse' : undefined],
+                  ['− Envío', shipCost],
+                  ['− Comisión de pago', order.paymentFeeCents, refunded ? 'no se recupera al reembolsar' : undefined],
+                ]
+                return (
+                  <dl className="mt-4 max-w-md space-y-1.5 text-sm">
+                    {rows.map(([label, value, hint]) => (
+                      <div key={label} className="flex justify-between gap-4">
+                        <dt>
+                          {label}
+                          {hint && <span className="ml-2 text-[11px] text-washed-black/50">{hint}</span>}
+                        </dt>
+                        <dd className="tabular-nums">{formatCents(value)}</dd>
+                      </div>
+                    ))}
+                    <div className="flex justify-between border-t border-washed-black/15 pt-1.5 font-medium">
+                      <dt>Beneficio</dt>
+                      <dd className={`tabular-nums ${profit < 0 ? 'text-terracotta' : ''}`}>{formatCents(profit)}</dd>
+                    </div>
+                    {!order.costsKnown && (
+                      <p className="pt-2 text-[11px] text-terracotta">Algún producto no tenía coste indicado al comprar: el beneficio real es menor.</p>
+                    )}
+                  </dl>
+                )
+              })()}
+            </section>
+          )}
+
           <section className="admin-card">
             <h2 className="admin-h2">Historial</h2>
             <ol className="mt-4 space-y-4 border-l border-washed-black/15 pl-5">

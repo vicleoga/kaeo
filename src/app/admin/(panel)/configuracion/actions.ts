@@ -24,7 +24,7 @@ export async function saveShippingZones(_prev: SettingsState, formData: FormData
   await requireAdmin()
   const zones = await prisma.shippingZone.findMany()
   const errors: Record<string, string> = {}
-  const updates: { id: string; data: { active: boolean; priceCents: number; freeFromCents: number | null; estimatedDays: string } }[] = []
+  const updates: { id: string; data: { active: boolean; priceCents: number; costCents: number; freeFromCents: number | null; estimatedDays: string } }[] = []
 
   for (const z of zones) {
     const f = (k: string) => String(formData.get(`zone.${z.id}.${k}`) ?? '').trim()
@@ -32,11 +32,14 @@ export async function saveShippingZones(_prev: SettingsState, formData: FormData
     const price = parseEuros(f('price'))
     const freeText = f('freeFrom')
     const freeFrom = freeText ? parseEuros(freeText) : null
+    const costText = f('cost')
+    const cost = costText ? parseEuros(costText) : 0
     if (price == null || price < 0) errors[z.id] = `${z.name}: precio de envío no válido`
     else if (freeText && freeFrom == null) errors[z.id] = `${z.name}: importe de envío gratis no válido`
+    else if (cost == null) errors[z.id] = `${z.name}: coste de envío no válido`
     updates.push({
       id: z.id,
-      data: { active: formData.get(`zone.${z.id}.active`) === 'on', priceCents: price ?? 0, freeFromCents: freeFrom, estimatedDays: f('days').slice(0, 60) },
+      data: { active: formData.get(`zone.${z.id}.active`) === 'on', priceCents: price ?? 0, costCents: cost ?? 0, freeFromCents: freeFrom, estimatedDays: f('days').slice(0, 60) },
     })
   }
   if (Object.keys(errors).length) return { error: Object.values(errors).join(' · '), fields: errors }
@@ -55,6 +58,17 @@ export async function saveVat(_prev: SettingsState, formData: FormData): Promise
   await setSetting('vatRateBp', Math.round(n * 100))
   refreshAll()
   return { ok: 'IVA general guardado. Se aplica a los pedidos nuevos (los ya hechos conservan el suyo).' }
+}
+
+export async function savePaymentFees(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
+  await requireAdmin()
+  const pct = Number(String(formData.get('percent') ?? '').trim().replace(',', '.').replace('%', ''))
+  const fixed = parseEuros(String(formData.get('fixed') ?? '').trim() || '0')
+  if (!Number.isFinite(pct) || pct < 0 || pct > 10) return { error: 'Porcentaje no válido (entre 0 y 10 %).' }
+  if (fixed == null || fixed > 500) return { error: 'Importe fijo no válido.' }
+  await setSetting('paymentFees', { percentBp: Math.round(pct * 100), fixedCents: fixed })
+  refreshAll()
+  return { ok: 'Comisión guardada. Se aplica a los pedidos que se cobren a partir de ahora.' }
 }
 
 const companySchema = z.object({

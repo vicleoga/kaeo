@@ -23,5 +23,18 @@ export async function setSetting(key: string, value: unknown) {
 /** IVA general en puntos básicos (2100 = 21 %) */
 export const getVatRateBp = () => getSetting<number>('vatRateBp', DEFAULT_VAT_BP)
 
+/**
+ * Comisión de la pasarela de pago: porcentaje (puntos básicos) + fijo (céntimos) por cobro.
+ * Por defecto, la tarifa estándar de Stripe para tarjetas del EEE: 1,5 % + 0,25 €.
+ */
+export interface PaymentFees {
+  percentBp: number
+  fixedCents: number
+}
+export const getPaymentFees = () => getSetting<PaymentFees>('paymentFees', { percentBp: 150, fixedCents: 25 })
+
+export const paymentFeeFor = (totalCents: number, fees: PaymentFees) =>
+  totalCents > 0 ? Math.round((totalCents * fees.percentBp) / 10000) + fees.fixedCents : 0
+
 export const getCompany = () =>
   getSetting<CompanyInfo>('company', { legalName: '', taxId: '', address: '', email: '', phone: '' })

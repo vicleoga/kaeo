@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { saveCompany, saveShippingZones, saveVat, type SettingsState } from './actions'
+import { saveCompany, savePaymentFees, saveShippingZones, saveVat, type SettingsState } from './actions'
 
 function Feedback({ state }: { state: SettingsState }) {
   if (state.error)
@@ -25,6 +25,7 @@ export interface ZoneRow {
   name: string
   active: boolean
   price: string
+  cost: string
   freeFrom: string
   days: string
   where: string
@@ -38,18 +39,19 @@ export function ShippingZonesForm({ zones }: { zones: ZoneRow[] }) {
       <div>
         <h2 className="admin-h2">Zonas de envío</h2>
         <p className="field-hint">
-          Solo se vende a las zonas activas. Precios con IVA incluido. Envío gratis: vacío = nunca. Canarias y UE están preparadas pero
+          Solo se vende a las zonas activas. Lo que cobras al cliente lleva IVA; lo que te cuesta a ti, sin IVA (para el beneficio). Envío gratis: vacío = nunca. Canarias y UE están preparadas pero
           desactivadas hasta confirmar la fiscalidad con la gestoría (IGIC / IVA del país de destino).
         </p>
       </div>
       <Feedback state={state} />
       <div className="overflow-x-auto">
-        <table className="admin-table min-w-[640px]">
+        <table className="admin-table min-w-[760px]">
           <thead>
             <tr>
               <th>Zona</th>
               <th className="text-center">Activa</th>
-              <th>Precio (€)</th>
+              <th>Cobras al cliente (€)</th>
+              <th>Te cuesta (€, sin IVA)</th>
               <th>Gratis desde (€)</th>
               <th>Plazo de entrega</th>
             </tr>
@@ -66,6 +68,9 @@ export function ShippingZonesForm({ zones }: { zones: ZoneRow[] }) {
                 </td>
                 <td>
                   <input name={`zone.${z.id}.price`} defaultValue={z.price} inputMode="decimal" className="input w-24 py-1.5" aria-label={`Precio de envío ${z.name}`} />
+                </td>
+                <td>
+                  <input name={`zone.${z.id}.cost`} defaultValue={z.cost} inputMode="decimal" placeholder="0,00" className="input w-24 py-1.5" aria-label={`Coste real del envío ${z.name}`} />
                 </td>
                 <td>
                   <input name={`zone.${z.id}.freeFrom`} defaultValue={z.freeFrom} inputMode="decimal" placeholder="Nunca" className="input w-28 py-1.5" aria-label={`Envío gratis desde, ${z.name}`} />
@@ -100,6 +105,36 @@ export function VatForm({ vat }: { vat: string }) {
             IVA (%)
           </label>
           <input id="vat" name="vat" defaultValue={vat} inputMode="decimal" className="input w-28" aria-invalid={!!state.fields?.vat} />
+        </div>
+        <button className="btn-primary py-2.5" disabled={pending}>
+          {pending ? 'Guardando…' : 'Guardar'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+export function PaymentFeesForm({ percent, fixed }: { percent: string; fixed: string }) {
+  const [state, action, pending] = useActionState<SettingsState, FormData>(savePaymentFees, {})
+  return (
+    <form action={action} className="admin-card space-y-4" noValidate>
+      <div>
+        <h2 className="admin-h2">Comisión de la pasarela de pago</h2>
+        <p className="field-hint">Para calcular el beneficio real. Stripe, tarjetas europeas: 1,5 % + 0,25 € (revísalo en tu tarifa).</p>
+      </div>
+      <Feedback state={state} />
+      <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <label htmlFor="fee-percent" className="field-label">
+            Porcentaje (%)
+          </label>
+          <input id="fee-percent" name="percent" defaultValue={percent} inputMode="decimal" className="input w-24" />
+        </div>
+        <div>
+          <label htmlFor="fee-fixed" className="field-label">
+            Fijo por cobro (€)
+          </label>
+          <input id="fee-fixed" name="fixed" defaultValue={fixed} inputMode="decimal" className="input w-24" />
         </div>
         <button className="btn-primary py-2.5" disabled={pending}>
           {pending ? 'Guardando…' : 'Guardar'}

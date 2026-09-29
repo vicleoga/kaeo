@@ -1,12 +1,17 @@
 import { prisma } from '@/server/db'
-import { getCompany, getVatRateBp } from '@/server/settings'
+import { getCompany, getPaymentFees, getVatRateBp } from '@/server/settings'
 import { centsToInput } from '@/lib/catalog'
-import { CompanyForm, ShippingZonesForm, VatForm } from './SettingsForms'
+import { CompanyForm, PaymentFeesForm, ShippingZonesForm, VatForm } from './SettingsForms'
 
 export const metadata = { title: 'Configuración' }
 
 export default async function SettingsPage() {
-  const [zones, vatBp, company] = await Promise.all([prisma.shippingZone.findMany({ orderBy: { sortOrder: 'asc' } }), getVatRateBp(), getCompany()])
+  const [zones, vatBp, company, fees] = await Promise.all([
+    prisma.shippingZone.findMany({ orderBy: { sortOrder: 'asc' } }),
+    getVatRateBp(),
+    getCompany(),
+    getPaymentFees(),
+  ])
 
   return (
     <div className="space-y-8">
@@ -22,6 +27,7 @@ export default async function SettingsPage() {
           name: z.name,
           active: z.active,
           price: centsToInput(z.priceCents),
+          cost: centsToInput(z.costCents),
           freeFrom: centsToInput(z.freeFromCents),
           days: z.estimatedDays,
           where:
@@ -34,7 +40,10 @@ export default async function SettingsPage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-        <VatForm vat={String(vatBp / 100).replace('.', ',')} />
+        <div className="space-y-6">
+          <VatForm vat={String(vatBp / 100).replace('.', ',')} />
+          <PaymentFeesForm percent={String(fees.percentBp / 100).replace('.', ',')} fixed={centsToInput(fees.fixedCents)} />
+        </div>
         <CompanyForm company={company} />
       </div>
     </div>

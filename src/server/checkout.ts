@@ -85,6 +85,8 @@ export async function placeOrder(input: CheckoutInput, siteUrl: string): Promise
         shippingCents: quote.shipping!.priceCents,
         totalCents: quote.totalCents,
         taxCents: quote.taxCents,
+        shippingCostCents: quote.shipping!.costCents,
+        costsKnown: quote.lines.every((l) => l.unitCostCents != null),
         customerNote: input.note || null,
         items: {
           create: quote.lines.map((l) => ({
@@ -96,6 +98,7 @@ export async function placeOrder(input: CheckoutInput, siteUrl: string): Promise
             colorName: l.colorName,
             image: l.image,
             unitPriceCents: l.unitPriceCents,
+            unitCostCents: l.unitCostCents,
             quantity: l.quantity,
             vatRateBp: l.vatRateBp,
             totalCents: l.totalCents,

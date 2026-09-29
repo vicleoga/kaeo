@@ -3,8 +3,8 @@
 //
 //   npm run db:seed
 //
-// Es idempotente: colores, zonas y ajustes se crean si faltan, y los productos solo se
-// crean si no existe ya uno con el mismo slug (no pisa lo que se haya editado en el admin).
+// Es idempotente: colores, zonas y ajustes se crean si faltan; el catálogo de ejemplo solo se crea
+// si la tienda no tiene ningún producto, y los costes de ejemplo solo donde no hay ninguno.
 
 import 'dotenv/config'
 import { createPrismaClient } from '../src/server/db'
@@ -95,6 +95,25 @@ const GUIDES: Record<Kind, { columns: string[]; rows: string[][] }> = {
 // Las prendas de lino y punto se venden con stock propio; el resto, bajo demanda.
 const OWN_STOCK: Kind[] = ['shirt', 'pants', 'dress', 'knit']
 
+// Costes de EJEMPLO por unidad (céntimos, sin IVA), orientativos de impresión bajo demanda / taller.
+// Sustitúyelos por los reales de tu proveedor desde el admin.
+const EXAMPLE_COST: Record<Kind, number> = { tee: 950, sweatshirt: 1950, shirt: 2200, pants: 2100, dress: 2500, knit: 1600 }
+// Lo que cuesta cada envío (céntimos, sin IVA), de ejemplo
+const EXAMPLE_SHIPPING_COST: Record<string, number> = { PENINSULA: 450, BALEARES: 750, CANARIAS: 1200, UE: 1100 }
+
+/** Rellena costes de ejemplo SOLO donde no hay ninguno (no pisa lo introducido en el admin). */
+async function seedExampleCosts() {
+  const products = await prisma.product.findMany({ where: { costCents: null }, select: { id: true, name: true } })
+  for (const p of products) {
+    const kind = kindOf({ name: p.name } as Product)
+    await prisma.product.update({ where: { id: p.id }, data: { costCents: EXAMPLE_COST[kind] } })
+  }
+  for (const [code, cost] of Object.entries(EXAMPLE_SHIPPING_COST)) {
+    await prisma.shippingZone.updateMany({ where: { code, costCents: 0 }, data: { costCents: cost } })
+  }
+  return products.length
+}
+
 async function seedColors() {
   for (const [i, key] of PALETTE_ORDER.entries()) {
     const { name, hex } = PALETTE[key]
@@ -135,6 +154,9 @@ async function seedSettings() {
 }
 
 async function seedProducts() {
+  // El catálogo de ejemplo solo se crea en una tienda VACÍA. Si ya hay productos, no se toca:
+  // así no reaparecen los que se hayan borrado a propósito desde el admin.
+  if ((await prisma.product.count()) > 0) return 0
   const colors = new Map((await prisma.color.findMany()).map((c) => [c.key, c]))
   let created = 0
   for (const [i, p] of PRODUCTS.entries()) {
@@ -193,8 +215,9 @@ async function main() {
   await seedSettings()
   await seedDiscounts()
   const created = await seedProducts()
+  const withCost = await seedExampleCosts()
   const [products, variants] = await Promise.all([prisma.product.count(), prisma.variant.count()])
-  console.log(`Seed completado: ${created} productos nuevos (${products} en total, ${variants} variantes).`)
+  console.log(`Seed completado: ${created} productos nuevos (${products} en total, ${variants} variantes); coste de ejemplo en ${withCost}.`)
 }
 
 main()

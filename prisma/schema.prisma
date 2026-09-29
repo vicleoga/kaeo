@@ -58,6 +58,8 @@ model Product {
   priceCents     Int
   /// Tipo de IVA propio en puntos básicos; null = el general de la configuración
   vatRateBp      Int?
+  /// Coste por unidad que se paga al proveedor, en céntimos y SIN IVA; null = sin indicar
+  costCents      Int?
   description    String         @default("")
   composition    String         @default("")
   care           String         @default("")
@@ -90,6 +92,8 @@ model Variant {
   color             Color       @relation(fields: [colorId], references: [id])
   /// Precio propio de la variante (céntimos, IVA incluido); null = precio del producto
   priceCents        Int?
+  /// Coste propio de la variante (céntimos, sin IVA), p. ej. tallas grandes; null = coste del producto
+  costCents         Int?
   /// Solo se tiene en cuenta si el producto es OWN_STOCK
   stock             Int         @default(0)
   lowStockThreshold Int         @default(3)
@@ -178,6 +182,8 @@ model ShippingZone {
   /// Solo se vende a zonas activas
   active         Boolean  @default(false)
   priceCents     Int
+  /// Lo que nos cuesta a nosotros cada envío a esta zona (transportista/proveedor), céntimos sin IVA
+  costCents      Int      @default(0)
   /// Envío gratis a partir de este importe (céntimos); null = nunca
   freeFromCents  Int?
   /// Países (ISO 3166-1 alfa-2) que cubre la zona
@@ -217,42 +223,48 @@ model Customer {
 }
 
 model Order {
-  id              String             @id @default(cuid())
+  id                String             @id @default(cuid())
   /// Correlativo interno; el número público (KAEO-26-000123) se deriva de él
-  seq             Int                @unique @default(autoincrement())
-  number          String             @unique
+  seq               Int                @unique @default(autoincrement())
+  number            String             @unique
   /// Token secreto para ver el pedido sin cuenta (enlace del email y página de confirmación)
-  accessToken     String             @unique
+  accessToken       String             @unique
   /// Evita pedidos duplicados si el cliente pulsa dos veces "Pagar"
-  checkoutKey     String             @unique
-  status          OrderStatus        @default(PENDING_PAYMENT)
-  customerId      String
-  customer        Customer           @relation(fields: [customerId], references: [id])
-  email           String
+  checkoutKey       String             @unique
+  status            OrderStatus        @default(PENDING_PAYMENT)
+  customerId        String
+  customer          Customer           @relation(fields: [customerId], references: [id])
+  email             String
   /// Copias en el momento de la compra (no cambian aunque cambie el catálogo o la configuración)
-  shippingAddress Json
-  shippingZone    String
-  shippingName    String
-  subtotalCents   Int
-  discountCents   Int                @default(0)
-  discountCode    String?
-  shippingCents   Int
-  totalCents      Int
+  shippingAddress   Json
+  shippingZone      String
+  shippingName      String
+  subtotalCents     Int
+  discountCents     Int                @default(0)
+  discountCode      String?
+  shippingCents     Int
+  totalCents        Int
   /// IVA incluido en el total (informativo, para facturas)
-  taxCents        Int
-  currency        String             @default("EUR")
-  customerNote    String?
+  taxCents          Int
+  currency          String             @default("EUR")
+  customerNote      String?
   /// Notas internas del equipo (no las ve el cliente)
-  internalNotes   String             @default("")
+  internalNotes     String             @default("")
   /// Stock propio ya descontado (para no descontarlo ni devolverlo dos veces)
-  stockCommitted  Boolean            @default(false)
-  paidAt          DateTime?
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  items           OrderItem[]
-  events          OrderStatusEvent[]
-  payments        Payment[]
-  fulfillments    FulfillmentJob[]
+  stockCommitted    Boolean            @default(false)
+  /// Costes en el momento de la compra (céntimos, sin IVA), para calcular el beneficio real
+  shippingCostCents Int                @default(0)
+  /// Comisión estimada de la pasarela de pago (se fija al cobrar)
+  paymentFeeCents   Int                @default(0)
+  /// false si algún producto no tenía coste indicado (el beneficio de este pedido es incompleto)
+  costsKnown        Boolean            @default(false)
+  paidAt            DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  items             OrderItem[]
+  events            OrderStatusEvent[]
+  payments          Payment[]
+  fulfillments      FulfillmentJob[]
 
   @@index([status, createdAt])
   @@index([email])
@@ -272,6 +284,8 @@ model OrderItem {
   colorName      String
   image          String?
   unitPriceCents Int
+  /// Coste por unidad al proveedor en el momento de la compra (céntimos, sin IVA); null = sin indicar
+  unitCostCents  Int?
   quantity       Int
   vatRateBp      Int
   /// Total de la línea tras repartir el descuento (céntimos, IVA incluido)

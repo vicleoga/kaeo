@@ -11,6 +11,7 @@ export interface ProductFormValues {
   status: 'DRAFT' | 'PUBLISHED'
   stockMode: 'ON_DEMAND' | 'OWN_STOCK'
   price: string
+  cost: string
   vatRate: string
   description: string
   composition: string
@@ -32,6 +33,7 @@ const EMPTY: ProductFormValues = {
   status: 'DRAFT',
   stockMode: 'ON_DEMAND',
   price: '',
+  cost: '',
   vatRate: '',
   description: '',
   composition: '',
@@ -185,10 +187,18 @@ export default function ProductForm({ productId, colors, initial = EMPTY }: Prop
       {!productId && <NewPhotos onPreparing={setPreparingPhotos} onCount={setPhotoCount} />}
 
       <section className="admin-card space-y-5">
-        <h2 className="admin-h2">Precio y stock</h2>
-        <div className="grid gap-5 md:grid-cols-3">
+        <h2 className="admin-h2">Precio, coste y stock</h2>
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           <Field name="price" error={err.price} label="Precio (€, IVA incluido)" hint="Cada variante puede tener su propio precio">
             <input id="price" name="price" defaultValue={v.price} inputMode="decimal" placeholder="39,90" className="input" {...invalid('price')} />
+          </Field>
+          <Field
+            name="cost"
+            error={err.cost}
+            label="Coste por unidad (€, sin IVA)"
+            hint="Lo que te cobra el proveedor por prenda. Sirve para calcular el beneficio real"
+          >
+            <input id="cost" name="cost" defaultValue={v.cost} inputMode="decimal" placeholder="9,50" className="input" {...invalid('cost')} />
           </Field>
           <Field name="vatRate" error={err.vatRate} label="IVA propio (%)" hint="Vacío = el general de la tienda (21 %)">
             <input id="vatRate" name="vatRate" defaultValue={v.vatRate} inputMode="decimal" placeholder="21" className="input" {...invalid('vatRate')} />

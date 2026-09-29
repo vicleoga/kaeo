@@ -32,6 +32,15 @@ export const productSchema = z.object({
       }
       return cents
     }),
+  cost: z.string().transform((v, ctx) => {
+    if (!v.trim()) return null
+    const cents = parseEuros(v)
+    if (cents == null || cents > 10_000_00) {
+      ctx.addIssue({ code: 'custom', message: 'Coste no válido (p. ej. 9,50)' })
+      return z.NEVER
+    }
+    return cents
+  }),
   vatRate: z.string().transform((v, ctx) => {
     const t = v.trim().replace(',', '.').replace('%', '')
     if (t === '') return null
@@ -80,6 +89,7 @@ export function productFormData(formData: FormData) {
     status: s('status'),
     stockMode: s('stockMode'),
     price: s('price'),
+    cost: s('cost'),
     vatRate: s('vatRate'),
     description: s('description'),
     composition: s('composition'),

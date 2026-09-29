@@ -10,6 +10,7 @@ interface VariantRow {
   size: string
   color: { name: string; hex: string }
   price: string
+  cost: string
   stock: number
   threshold: number
   providerRef: string
@@ -20,10 +21,11 @@ interface Props {
   productId: string
   stockMode: 'ON_DEMAND' | 'OWN_STOCK'
   basePrice: number
+  baseCost: number | null
   variants: VariantRow[]
 }
 
-export default function VariantsForm({ productId, stockMode, basePrice, variants }: Props) {
+export default function VariantsForm({ productId, stockMode, basePrice, baseCost, variants }: Props) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveVariants.bind(null, productId), {})
   const ownStock = stockMode === 'OWN_STOCK'
   const err = state.fields ?? {}
@@ -34,7 +36,8 @@ export default function VariantsForm({ productId, stockMode, basePrice, variants
         <div>
           <h2 className="admin-h2">Variantes ({variants.filter((v) => v.active).length} activas)</h2>
           <p className="field-hint">
-            Se generan solas al guardar tallas y colores. Precio vacío = {formatCents(basePrice)}.
+            Se generan solas al guardar tallas y colores. Precio vacío = {formatCents(basePrice)}; coste vacío ={' '}
+            {baseCost != null ? formatCents(baseCost) : 'el del producto (sin indicar)'}.
             {!ownStock && ' Producto bajo demanda: el stock no se tiene en cuenta.'}
           </p>
         </div>
@@ -54,12 +57,13 @@ export default function VariantsForm({ productId, stockMode, basePrice, variants
       )}
 
       <div className="overflow-x-auto">
-        <table className="admin-table min-w-[860px]">
+        <table className="admin-table min-w-[960px]">
           <thead>
             <tr>
               <th>Variante</th>
               <th>SKU</th>
               <th>Precio (€)</th>
+              <th>Coste (€)</th>
               {ownStock && <th>Stock</th>}
               {ownStock && <th>Aviso si ≤</th>}
               <th>Ref. proveedor</th>
@@ -90,6 +94,16 @@ export default function VariantsForm({ productId, stockMode, basePrice, variants
                       placeholder={formatCents(basePrice).replace(/\s?€/, '')}
                       inputMode="decimal"
                       aria-label={`Precio ${v.sku}`}
+                      className="input w-24 py-1.5"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      name={`v.${v.id}.cost`}
+                      defaultValue={v.cost}
+                      placeholder={baseCost != null ? formatCents(baseCost).replace(/\s?€/, '') : ''}
+                      inputMode="decimal"
+                      aria-label={`Coste ${v.sku} (sin IVA)`}
                       className="input w-24 py-1.5"
                     />
                   </td>

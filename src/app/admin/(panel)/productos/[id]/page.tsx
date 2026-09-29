@@ -78,6 +78,7 @@ export default async function EditProductPage({
           status: product.status,
           stockMode: product.stockMode,
           price: centsToInput(product.priceCents),
+          cost: centsToInput(product.costCents),
           vatRate: product.vatRateBp == null ? '' : String(product.vatRateBp / 100).replace('.', ','),
           description: product.description,
           composition: product.composition,
@@ -98,12 +99,14 @@ export default async function EditProductPage({
         productId={product.id}
         stockMode={product.stockMode}
         basePrice={product.priceCents}
+        baseCost={product.costCents}
         variants={variants.map((v) => ({
           id: v.id,
           sku: v.sku,
           size: v.size,
           color: { name: v.color.name, hex: v.color.hex },
           price: centsToInput(v.priceCents),
+          cost: centsToInput(v.costCents),
           stock: v.stock,
           threshold: v.lowStockThreshold,
           providerRef: v.providerRef ?? '',

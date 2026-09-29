@@ -25,7 +25,7 @@ export async function activeCountries() {
 const UNSERVED_ES_PREFIXES = ['51', '52']
 
 export type ZoneResult =
-  | { ok: true; zone: { code: string; name: string; priceCents: number; freeFromCents: number | null; estimatedDays: string } }
+  | { ok: true; zone: { code: string; name: string; priceCents: number; costCents: number; freeFromCents: number | null; estimatedDays: string } }
   | { ok: false; error: string }
 
 /**

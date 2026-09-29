@@ -74,14 +74,14 @@ Máximo 10 unidades por línea y nunca más que el stock en productos de stock p
 
 ## Panel de administración (`/admin`)
 
-- **Dashboard**: productos publicados y borradores, variantes activas, avisos de stock bajo y estado de las zonas de envío.
 - **Productos**: listado con búsqueda (nombre, código o SKU) y filtros; crear, editar y borrar.
   - Precio con IVA incluido, IVA propio opcional (vacío = 21 % general), borrador/publicado.
   - **Tallas propias de cada producto** (dependen de la prenda del proveedor) y **guía de tallas** en texto
     (`Talla | Pecho | Largo`, una fila por línea).
   - Colores → al guardar se generan las **variantes talla × color** con SKU automático (`KA0007-SGE-M`).
     Si quitas una talla o un color, sus variantes se **desactivan** (no se borran).
-  - Cada variante: SKU editable, precio propio opcional, stock, umbral de aviso y referencia en el proveedor.
+  - **Coste por unidad** (sin IVA, lo que paga KAEO al proveedor) en el producto y, opcional, por variante.
+  - Cada variante: SKU editable, precio y coste propios opcionales, stock, umbral de aviso y referencia en el proveedor.
   - **Fotos**: subida múltiple, texto alternativo, color asociado (la tarjeta cambia de foto al elegir ese color)
     y orden. Se convierten a WebP (1600 y 600 px) y se eliminan los datos EXIF.
   - Bajo demanda (sin límite de stock) o stock propio.
@@ -93,8 +93,14 @@ Máximo 10 unidades por línea y nunca más que el stock en productos de stock p
   notas internas y, con el proveedor simulado, botones que envían los webhooks de "en producción / enviado / entregado / fallo".
 - **Clientes**: se crean al comprar (sin cuenta); pedidos, gasto y consentimiento de newsletter.
 - **Descuentos**: porcentaje o importe, pedido mínimo, fechas de inicio y caducidad (hora de Madrid) y límite de usos.
-- **Configuración**: zonas de envío (activar/desactivar, precio, envío gratis, plazo), IVA general y datos de la empresa.
-- **Dashboard**: ventas y ticket medio (30 días y hoy), pedidos recientes, pedidos que requieren atención y stock bajo.
+- **Configuración**: zonas de envío (activar/desactivar, precio al cliente, coste real, envío gratis, plazo), IVA general,
+  comisión de la pasarela de pago (% + fijo) y datos de la empresa.
+- **Dashboard**: periodo (hoy, 7 y 30 días, este mes, mes pasado); pedidos, ingresos, ticket medio y beneficio neto;
+  gráfico de ventas diarias; desglose **"¿Cuánto ganamos?"**: ingresos − IVA − coste de producto − envíos − comisiones
+  − pérdidas por reembolsos = beneficio neto (antes de impuestos trimestrales/anuales). Pedidos recientes, avisos y stock bajo.
+  La ficha de cada pedido muestra también su resultado.
+  - Los costes se **copian en el pedido al comprar** (producto y envío) y la comisión **al cobrar**: cambiar un coste después
+    no altera los pedidos ya hechos. El seed pone costes de **ejemplo** solo donde no hay ninguno.
 
 Newsletter y plantillas de email llegan en la fase 5.
 

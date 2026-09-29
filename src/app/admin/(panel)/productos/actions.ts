@@ -37,7 +37,7 @@ export async function saveProduct(productId: string | null, _prev: FormState, fo
   // (las fotos no se devuelven en `values`: un <input type=file> no se puede rellenar de nuevo)
   const parsed = productSchema.safeParse(raw)
   if (!parsed.success) return { error: 'Revisa los campos marcados.', fields: fieldErrors(parsed.error), values: raw }
-  const { price, vatRate, colorIds, sizes, sizeGuide, ...data } = parsed.data
+  const { price, cost, vatRate, colorIds, sizes, sizeGuide, ...data } = parsed.data
   const slug = data.slug || slugify(data.name)
 
   const clash = await prisma.product.findFirst({ where: { slug, NOT: productId ? { id: productId } : undefined }, select: { id: true } })
@@ -48,6 +48,7 @@ export async function saveProduct(productId: string | null, _prev: FormState, fo
     slug,
     sizes,
     priceCents: price,
+    costCents: cost,
     vatRateBp: vatRate,
     sizeGuide: sizeGuide ?? Prisma.DbNull,
   }
@@ -106,12 +107,15 @@ export async function saveVariants(productId: string, _prev: FormState, formData
     const sku = f('sku').toUpperCase()
     const priceText = f('price')
     const price = priceText ? parseEuros(priceText) : null
+    const costText = f('cost')
+    const cost = costText ? parseEuros(costText) : null
     const stock = Number(f('stock') || '0')
     const threshold = Number(f('threshold') || '0')
 
     if (!/^[A-Z0-9][A-Z0-9-]{1,40}$/.test(sku)) errors[v.id] = `SKU no válido: "${sku}"`
     else if (skus.has(sku)) errors[v.id] = `SKU repetido: ${sku}`
     else if (priceText && (price == null || price <= 0)) errors[v.id] = `Precio no válido en ${sku}`
+    else if (costText && cost == null) errors[v.id] = `Coste no válido en ${sku}`
     else if (!Number.isInteger(stock) || stock < 0 || stock > 1_000_000) errors[v.id] = `Stock no válido en ${sku}`
     else if (!Number.isInteger(threshold) || threshold < 0 || threshold > 10_000) errors[v.id] = `Aviso de stock no válido en ${sku}`
     skus.add(sku)
@@ -121,6 +125,7 @@ export async function saveVariants(productId: string, _prev: FormState, formData
       data: {
         sku,
         priceCents: price,
+        costCents: cost,
         stock,
         lowStockThreshold: threshold,
         providerRef: f('providerRef') || null,

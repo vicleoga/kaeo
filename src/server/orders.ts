@@ -4,6 +4,7 @@ import { canTransition, STATUS_LABEL, type OrderStatusValue } from '@/lib/orderS
 import { getPaymentProvider } from './providers/payment'
 import { getFulfillmentProvider, type FulfillmentWebhookEvent, type ShippingAddress } from './providers/fulfillment'
 import { notifyOrder } from './notifications'
+import { getPaymentFees, paymentFeeFor } from './settings'
 import type { Prisma } from '@/generated/prisma/client'
 
 type Tx = Prisma.TransactionClient
@@ -41,12 +42,14 @@ export async function markPaid(paymentRef: string, amountCents: number | undefin
   if (payment.status === 'SUCCEEDED') return order.id // ya procesado
 
   let stockProblem: string | null = null
+  // Comisión estimada de la pasarela (con Stripe real se podrá sustituir por la exacta del cobro)
+  const paymentFeeCents = paymentFeeFor(amountCents ?? order.totalCents, await getPaymentFees())
   await prisma.$transaction(async (tx) => {
     await tx.payment.update({ where: { id: payment.id }, data: { status: 'SUCCEEDED', failureReason: null } })
     if (amountCents != null && amountCents !== order.totalCents) {
       stockProblem = `El importe cobrado (${amountCents}) no coincide con el total del pedido (${order.totalCents}).`
     }
-    await transition(tx, order.id, 'PAID', actor, 'Pago confirmado', { paidAt: new Date() })
+    await transition(tx, order.id, 'PAID', actor, 'Pago confirmado', { paidAt: new Date(), paymentFeeCents })
 
     // Stock propio: se descuenta al pagar, de forma atómica (solo si hay suficiente).
     if (!order.stockCommitted) {

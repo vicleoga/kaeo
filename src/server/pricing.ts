@@ -22,6 +22,8 @@ export interface PricedLine {
   vatRateBp: number
   stockMode: 'ON_DEMAND' | 'OWN_STOCK'
   providerRef: string | null
+  /** Coste por unidad al proveedor (céntimos, sin IVA); null = no indicado */
+  unitCostCents: number | null
   /** Total de la línea tras repartir el descuento */
   totalCents: number
 }
@@ -33,7 +35,7 @@ export interface Quote {
   subtotalCents: number
   discount: { code: string; amountCents: number; label: string } | null
   discountError: string | null
-  shipping: { zoneCode: string; name: string; priceCents: number; free: boolean; estimatedDays: string } | null
+  shipping: { zoneCode: string; name: string; priceCents: number; free: boolean; estimatedDays: string; costCents: number } | null
   shippingError: string | null
   taxCents: number
   totalCents: number
@@ -117,6 +119,7 @@ export async function quoteOrder(input: {
       vatRateBp: p.vatRateBp ?? defaultVat,
       stockMode: p.stockMode,
       providerRef: v.providerRef ?? p.providerRef,
+      unitCostCents: v.costCents ?? p.costCents ?? null,
       totalCents: unit * qty,
     })
   }
@@ -142,7 +145,7 @@ export async function quoteOrder(input: {
     const r = await resolveZone(input.country, input.postalCode)
     if (r.ok) {
       const free = r.zone.freeFromCents != null && subtotalCents - discountCents >= r.zone.freeFromCents
-      shipping = { zoneCode: r.zone.code, name: r.zone.name, priceCents: free ? 0 : r.zone.priceCents, free, estimatedDays: r.zone.estimatedDays }
+      shipping = { zoneCode: r.zone.code, name: r.zone.name, priceCents: free ? 0 : r.zone.priceCents, free, estimatedDays: r.zone.estimatedDays, costCents: r.zone.costCents }
     } else shippingError = r.error
   }
   const shippingCents = shipping?.priceCents ?? 0
