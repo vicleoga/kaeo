@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState, type ReactNode } from 'react'
 import { saveProduct, type FormState } from './actions'
+import { formatBytes, prepareImage } from '@/lib/imageResize'
 
 export interface ProductFormValues {
   name: string
@@ -63,10 +64,31 @@ function Field({ name, label, hint, error, children }: { name: string; label: st
   )
 }
 
-/** Fotos en el alta: se eligen aquí y se suben al pulsar "Crear producto". */
-function NewPhotos() {
-  const [previews, setPreviews] = useState<{ url: string; name: string; tooBig: boolean }[]>([])
+/**
+ * Fotos en el alta: se eligen aquí y se suben al pulsar "Crear producto".
+ * Al elegirlas se reducen en el navegador (fotos de móvil de 5–20 MB → 0,5–2 MB), así la
+ * creación del producto no se eterniza ni supera los límites de tamaño.
+ */
+function NewPhotos({ onPreparing, onCount }: { onPreparing: (busy: boolean) => void; onCount: (n: number) => void }) {
+  const [previews, setPreviews] = useState<{ url: string; name: string; before: number; after: number; tooBig: boolean }[]>([])
+  const [preparing, setPreparing] = useState(false)
   useEffect(() => () => previews.forEach((p) => URL.revokeObjectURL(p.url)), [previews])
+
+  const onChange = async (input: HTMLInputElement) => {
+    const originals = [...(input.files ?? [])].slice(0, 12)
+    setPreparing(true)
+    onPreparing(true)
+    const ready = await Promise.all(originals.map((f) => prepareImage(f)))
+    // Sustituye los ficheros del input por los reducidos: son los que se envían al crear
+    const dt = new DataTransfer()
+    ready.forEach((f) => dt.items.add(f))
+    input.files = dt.files
+    setPreviews(ready.map((f, i) => ({ url: URL.createObjectURL(f), name: f.name, before: originals[i].size, after: f.size, tooBig: f.size > 15 * 1024 * 1024 })))
+    onCount(ready.length)
+    setPreparing(false)
+    onPreparing(false)
+  }
+
   return (
     <section className="admin-card space-y-4">
       <div>
@@ -82,16 +104,12 @@ function NewPhotos() {
         type="file"
         multiple
         accept="image/jpeg,image/png,image/webp,image/avif"
-        onChange={(e) =>
-          setPreviews(
-            [...(e.target.files ?? [])].slice(0, 12).map((f) => ({ url: URL.createObjectURL(f), name: f.name, tooBig: f.size > 15 * 1024 * 1024 })),
-          )
-        }
+        onChange={(e) => onChange(e.currentTarget)}
         className="block w-full text-sm file:mr-4 file:border file:border-washed-black/40 file:bg-transparent file:px-4 file:py-2 file:text-[10px] file:uppercase file:tracking-[0.2em]"
         aria-describedby="files-hint"
       />
-      <p id="files-hint" className="field-hint">
-        JPG, PNG, WebP o AVIF · máx. 15 MB cada una · hasta 12
+      <p id="files-hint" className="field-hint" aria-live="polite">
+        {preparing ? 'Preparando fotos…' : 'JPG, PNG, WebP o AVIF · hasta 12 · se reducen en tu navegador antes de subirlas'}
       </p>
       {previews.length > 0 && (
         <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
@@ -99,7 +117,10 @@ function NewPhotos() {
             <li key={p.url} className="relative">
               <img src={p.url} alt="" className="aspect-[4/5] w-full object-cover" />
               {i === 0 && <span className="badge absolute left-1 top-1 bg-washed-black text-offwhite">Principal</span>}
-              {p.tooBig && <span className="badge absolute inset-x-1 bottom-1 bg-terracotta text-offwhite">Supera 15 MB</span>}
+              <span className="mt-1 block text-[10px] text-washed-black/55">
+                {p.after < p.before ? `${formatBytes(p.before)} → ${formatBytes(p.after)}` : formatBytes(p.after)}
+              </span>
+              {p.tooBig && <span className="badge absolute inset-x-1 bottom-6 bg-terracotta text-offwhite">Supera 15 MB</span>}
             </li>
           ))}
         </ul>
@@ -116,6 +137,8 @@ interface Props {
 
 export default function ProductForm({ productId, colors, initial = EMPTY }: Props) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveProduct.bind(null, productId), {})
+  const [preparingPhotos, setPreparingPhotos] = useState(false)
+  const [photoCount, setPhotoCount] = useState(0)
   const err = state.fields ?? {}
   // Tras un envío con errores, el formulario se rellena con lo que se había escrito.
   const v = (state.values ? { ...initial, ...state.values } : initial) as ProductFormValues
@@ -159,7 +182,7 @@ export default function ProductForm({ productId, colors, initial = EMPTY }: Prop
         </div>
       </section>
 
-      {!productId && <NewPhotos />}
+      {!productId && <NewPhotos onPreparing={setPreparingPhotos} onCount={setPhotoCount} />}
 
       <section className="admin-card space-y-5">
         <h2 className="admin-h2">Precio y stock</h2>
@@ -248,8 +271,16 @@ export default function ProductForm({ productId, colors, initial = EMPTY }: Prop
       </section>
 
       <div className="sticky bottom-0 -mx-5 flex justify-end gap-3 border-t border-washed-black/10 bg-offwhite/95 px-5 py-4 backdrop-blur md:mx-0 md:px-0">
-        <button type="submit" disabled={pending} className="btn-primary px-8 py-3">
-          {pending ? 'Guardando…' : productId ? 'Guardar cambios' : 'Crear producto'}
+        <button type="submit" disabled={pending || preparingPhotos} className="btn-primary px-8 py-3">
+          {preparingPhotos
+            ? 'Preparando fotos…'
+            : pending
+              ? !productId && photoCount
+                ? `Creando producto y subiendo ${photoCount} foto${photoCount === 1 ? '' : 's'}…`
+                : 'Guardando…'
+              : productId
+                ? 'Guardar cambios'
+                : 'Crear producto'}
         </button>
       </div>
     </form>

@@ -5,7 +5,8 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/server/db'
 import { requireAdmin } from '@/server/auth'
 import { nextProductCode, syncVariants } from '@/server/products'
-import { deleteStoredImage, ImageError, storeProductImage } from '@/server/images'
+import { deleteStoredImage } from '@/server/images'
+import { addProductImages as addImages, MAX_FILES_PER_UPLOAD as MAX_FILES } from '@/server/productImages'
 import { fieldErrors, productFormData, productSchema } from '@/lib/validation/product'
 import { parseEuros, slugify } from '@/lib/catalog'
 import { Prisma } from '@/generated/prisma/client'
@@ -79,27 +80,6 @@ export async function saveProduct(productId: string | null, _prev: FormState, fo
   return { ok: 'Producto guardado.' }
 }
 
-const MAX_FILES = 12
-
-/** Procesa y guarda fotos de un producto. Devuelve los mensajes de las que no se han podido subir. */
-async function addImages(productId: string, files: File[], colorId: string | null, defaultAlt = '') {
-  const last = await prisma.productImage.findFirst({ where: { productId }, orderBy: { sortOrder: 'desc' } })
-  let order = (last?.sortOrder ?? -1) + 1
-  const problems: string[] = []
-  for (const file of files) {
-    try {
-      const stored = await storeProductImage(file, productId)
-      await prisma.productImage.create({ data: { productId, ...stored, colorId, alt: defaultAlt, sortOrder: order++ } })
-    } catch (e) {
-      if (e instanceof ImageError) problems.push(e.message)
-      else {
-        console.error('addImages', e)
-        problems.push(`${file.name}: error al guardar.`)
-      }
-    }
-  }
-  return problems
-}
 
 export async function deleteProduct(productId: string) {
   await requireAdmin()
@@ -172,18 +152,6 @@ export async function saveVariants(productId: string, _prev: FormState, formData
 
 // ───────────── Fotos ─────────────
 
-export async function uploadImages(productId: string, _prev: FormState, formData: FormData): Promise<FormState> {
-  await requireAdmin()
-  const files = formData.getAll('files').filter((f): f is File => f instanceof File && f.size > 0)
-  if (!files.length) return { error: 'Elige al menos una foto.' }
-  if (files.length > MAX_FILES) return { error: `Sube como máximo ${MAX_FILES} fotos a la vez.` }
-
-  const colorId = String(formData.get('colorId') ?? '') || null
-  const problems = await addImages(productId, files, colorId)
-  refresh(productId)
-  if (problems.length) return { error: problems.join(' ') }
-  return { ok: files.length === 1 ? 'Foto subida. Añade su texto alternativo.' : `${files.length} fotos subidas. Añade su texto alternativo.` }
-}
 
 export async function updateImage(imageId: string, _prev: FormState, formData: FormData): Promise<FormState> {
   await requireAdmin()

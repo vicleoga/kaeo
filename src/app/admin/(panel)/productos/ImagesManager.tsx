@@ -1,7 +1,8 @@
 'use client'
 
 import { useActionState, useTransition } from 'react'
-import { deleteImage, moveImage, updateImage, uploadImages, type FormState } from './actions'
+import { deleteImage, moveImage, updateImage, type FormState } from './actions'
+import PhotoUploader from './PhotoUploader'
 
 interface ImageRow {
   id: string
@@ -97,8 +98,6 @@ function ImageCard({ image, index, total, colors }: { image: ImageRow; index: nu
 }
 
 export default function ImagesManager({ productId, colors, images }: Props) {
-  const [state, action, uploading] = useActionState<FormState, FormData>(uploadImages.bind(null, productId), {})
-
   return (
     <section className="admin-card space-y-5">
       <div>
@@ -119,41 +118,7 @@ export default function ImagesManager({ productId, colors, images }: Props) {
         <p className="text-sm text-washed-black/60">Este producto aún no tiene fotos.</p>
       )}
 
-      <form action={action} className="flex flex-wrap items-end gap-3 border-t border-washed-black/10 pt-5">
-        <div className="min-w-[220px] flex-1">
-          <label htmlFor="files" className="field-label">
-            Subir fotos
-          </label>
-          <input
-            id="files"
-            name="files"
-            type="file"
-            multiple
-            accept="image/jpeg,image/png,image/webp,image/avif"
-            className="block w-full text-sm file:mr-4 file:border file:border-washed-black/40 file:bg-transparent file:px-4 file:py-2 file:text-[10px] file:uppercase file:tracking-[0.2em]"
-          />
-          <p className="field-hint">JPG, PNG, WebP o AVIF · máx. 15 MB cada una · hasta 12 a la vez</p>
-        </div>
-        <div className="w-48">
-          <label htmlFor="upload-color" className="field-label">
-            Color
-          </label>
-          <ColorSelect colors={colors} id="upload-color" />
-        </div>
-        <button type="submit" disabled={uploading} className="btn-primary py-2.5">
-          {uploading ? 'Subiendo…' : 'Subir'}
-        </button>
-      </form>
-      {state.error && (
-        <p className="alert-error" role="alert">
-          {state.error}
-        </p>
-      )}
-      {state.ok && (
-        <p className="alert-ok" role="status">
-          {state.ok}
-        </p>
-      )}
+      <PhotoUploader productId={productId} colors={colors} />
     </section>
   )
 }
