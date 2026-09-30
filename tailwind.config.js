@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{js,jsx}'],
+  content: ['./src/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -9,10 +9,13 @@ export default {
         sage: '#8A9B8F',
         'washed-blue': '#5C7A8A',
         'washed-black': '#2E2E2E',
+        // Solo para avisos y errores (admin y formularios); tono tierra acorde a la paleta
+        terracotta: '#A4503A',
       },
       fontFamily: {
-        sans: ['Jost', 'Montserrat', 'system-ui', 'sans-serif'],
-        script: ['"Mrs Saint Delafield"', 'Allura', 'cursive'],
+        // Variables definidas por next/font en src/app/layout.tsx (fuentes autoalojadas)
+        sans: ['var(--font-jost)', 'Jost', 'Montserrat', 'system-ui', 'sans-serif'],
+        script: ['var(--font-script)', '"Mrs Saint Delafield"', 'Allura', 'cursive'],
       },
       letterSpacing: {
         brand: '0.2em',

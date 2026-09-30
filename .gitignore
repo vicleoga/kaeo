@@ -2,3 +2,17 @@ node_modules
 dist
 .DS_Store
 *.log
+
+# Next.js
+.next
+next-env.d.ts
+*.tsbuildinfo
+
+# Variables de entorno (solo se versiona .env.example)
+.env
+.env.*
+!.env.example
+
+# Prisma (cliente generado) y fotos subidas desde el admin
+src/generated
+uploads

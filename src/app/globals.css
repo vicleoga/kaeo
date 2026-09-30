@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-offwhite text-washed-black font-sans antialiased;
+    font-weight: 400;
+  }
+  /* Textura sutil de papel / ruido sobre los fondos claros */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.07;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  ::selection {
+    @apply bg-sand text-washed-black;
+  }
+  :focus-visible {
+    outline: 1px solid currentColor;
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  .label {
+    @apply text-[10px] sm:text-[11px] uppercase tracking-label font-medium;
+  }
+  .heading {
+    @apply uppercase tracking-wider2 font-medium;
+  }
+  .divider {
+    @apply block h-px w-[30px] bg-current opacity-60;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center border border-current px-7 py-3.5 text-[10px] sm:text-[11px] uppercase tracking-label font-medium transition-colors duration-500;
+  }
+  .btn-dark {
+    @apply btn border-washed-black text-washed-black hover:bg-washed-black hover:text-offwhite;
+  }
+  .btn-light {
+    @apply btn border-offwhite text-offwhite hover:bg-offwhite hover:text-washed-black;
+  }
+}
+
+/* ───────────── Formularios y panel de administración ───────────── */
+@layer components {
+  .field-label {
+    @apply mb-2 block text-[10px] font-medium uppercase tracking-[0.22em] text-washed-black/70;
+  }
+  .field-hint {
+    @apply mt-1.5 text-xs text-washed-black/55;
+  }
+  .field-error {
+    @apply mt-1.5 text-xs text-terracotta;
+  }
+  .input {
+    @apply w-full rounded-none border border-washed-black/25 bg-white/70 px-3 py-2.5 text-sm text-washed-black placeholder:text-washed-black/35 focus:border-washed-black focus:outline-none;
+  }
+  .input[aria-invalid='true'] {
+    @apply border-terracotta;
+  }
+  .admin-card {
+    @apply border border-washed-black/10 bg-white/55 p-5 md:p-7;
+  }
+  .admin-h1 {
+    @apply text-lg font-medium uppercase tracking-[0.2em];
+  }
+  .admin-h2 {
+    @apply text-[11px] font-medium uppercase tracking-[0.25em] text-washed-black/80;
+  }
+  .admin-table {
+    @apply w-full border-collapse text-left text-sm;
+  }
+  .admin-table th {
+    @apply border-b border-washed-black/15 px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.2em] text-washed-black/60;
+  }
+  .admin-table td {
+    @apply border-b border-washed-black/10 px-3 py-2.5 align-middle;
+  }
+  .btn-sm {
+    @apply inline-flex items-center justify-center gap-2 border border-current px-4 py-2 text-[10px] font-medium uppercase tracking-[0.22em] transition-colors duration-300 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn-sm border-washed-black bg-washed-black text-offwhite hover:bg-transparent hover:text-washed-black;
+  }
+  .btn-secondary {
+    @apply btn-sm border-washed-black/40 text-washed-black hover:border-washed-black hover:bg-washed-black hover:text-offwhite;
+  }
+  .btn-danger {
+    @apply btn-sm border-terracotta/60 text-terracotta hover:bg-terracotta hover:text-offwhite;
+  }
+  .badge {
+    @apply inline-block px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.18em];
+  }
+  .alert-error {
+    @apply border border-terracotta/40 bg-terracotta/10 px-4 py-3 text-sm text-terracotta;
+  }
+  .alert-ok {
+    @apply border border-sage/50 bg-sage/15 px-4 py-3 text-sm text-washed-black;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ───────────── Páginas de texto (legales, envíos, FAQ, nosotros) ───────────── */
+@layer components {
+  .prose-kaeo {
+    @apply text-sm leading-7 text-washed-black/80;
+  }
+  .prose-kaeo h2 {
+    @apply heading mb-4 mt-14 text-[13px] text-washed-black first:mt-0;
+  }
+  .prose-kaeo h3 {
+    @apply mb-2 mt-8 text-sm font-medium text-washed-black;
+  }
+  .prose-kaeo p,
+  .prose-kaeo ul,
+  .prose-kaeo ol {
+    @apply mb-4;
+  }
+  .prose-kaeo ul {
+    @apply list-disc space-y-1.5 pl-5;
+  }
+  .prose-kaeo ol {
+    @apply list-decimal space-y-1.5 pl-5;
+  }
+  .prose-kaeo a {
+    @apply underline underline-offset-4 hover:text-washed-black;
+  }
+  .prose-kaeo strong {
+    @apply font-medium text-washed-black;
+  }
+  .prose-kaeo table {
+    @apply mb-6 w-full border-collapse text-left text-[13px];
+  }
+  .prose-kaeo th {
+    @apply border-b border-washed-black/20 py-2 pr-4 font-medium text-washed-black;
+  }
+  .prose-kaeo td {
+    @apply border-b border-washed-black/10 py-2 pr-4 align-top;
+  }
+  /* Texto pendiente de revisión legal: muy visible a propósito */
+  .revisar {
+    @apply bg-terracotta/15 px-1 text-terracotta;
+  }
+}

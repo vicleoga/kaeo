@@ -1,0 +1,25 @@
+# Desarrollo: solo PostgreSQL en Docker, la app con `npm run dev` en tu máquina.
+#   docker compose -f docker-compose.dev.yml up -d
+# La base de datos queda accesible únicamente desde tu equipo (127.0.0.1:5432).
+# Proyecto con nombre propio para no chocar con los contenedores de docker-compose.yml.
+name: kaeo-dev
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kaeo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kaeo_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-kaeo}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata_dev:
