@@ -49,6 +49,7 @@ function toSummary(p: ProductWithRelations): ProductSummary {
     sizes: p.sizes.filter((s) => activeSizes.has(s)),
     variants,
     imageByColor,
+    thumbs: p.images.map((img) => ({ url: img.thumbUrl ?? img.url, alt: img.alt || p.name, colorKey: img.color?.key ?? null })),
   }
 }
 

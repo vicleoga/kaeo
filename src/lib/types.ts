@@ -44,6 +44,8 @@ export interface ProductSummary {
   variants: VariantInfo[]
   /** Foto específica de cada color, si la hay (clave de color → URL) */
   imageByColor: Record<string, string>
+  /** Todas las fotos en miniatura, en orden (colorKey null = foto sin color concreto), para pasar fotos en la tarjeta */
+  thumbs: { url: string; alt: string; colorKey: string | null }[]
 }
 
 export interface ProductImageInfo {

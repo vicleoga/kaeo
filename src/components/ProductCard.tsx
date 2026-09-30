@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { ProductSummary } from '@/lib/types'
 import { formatCents } from '@/lib/catalog'
 import { hasPriceRange, toCartLine } from '@/lib/cartLine'
@@ -9,11 +9,26 @@ import { useCart } from '@/context/CartContext'
 
 // Tarjeta de producto. "Añadir" despliega las tallas del color elegido (en escritorio aparece
 // al pasar el ratón; en móvil está siempre visible). Foto y nombre llevan a la ficha.
+// Si hay varias fotos se pasan con las flechas (o deslizando en el móvil) sin salir del catálogo.
 export default function ProductCard({ product }: { product: ProductSummary }) {
   const [color, setColor] = useState(product.colors[0])
   const [picking, setPicking] = useState(false)
+  const [photo, setPhoto] = useState(0)
+  const touchX = useRef<number | null>(null)
   const { add } = useCart()
-  const image = product.imageByColor[color.key] ?? product.image
+
+  // Fotos del color elegido y después las que no son de un color concreto
+  const ofColor = product.thumbs.filter((t) => t.colorKey === color.key)
+  const neutral = product.thumbs.filter((t) => !t.colorKey)
+  const photos = ofColor.length ? [...ofColor, ...neutral] : [{ url: product.imageByColor[color.key] ?? product.image, alt: product.alt }, ...neutral.filter((t) => t.url !== product.image)]
+  const current = photos[photo % photos.length]
+  const image = photos[0].url
+  const many = photos.length > 1
+  const go = (step: number) => setPhoto((i) => (i + step + photos.length) % photos.length)
+  const chooseColor = (c: typeof color) => {
+    setColor(c)
+    setPhoto(0)
+  }
   const href = `/producto/${product.slug}`
   const variantsOfColor = product.sizes
     .map((size) => product.variants.find((v) => v.colorKey === color.key && v.size === size))
@@ -23,15 +38,52 @@ export default function ProductCard({ product }: { product: ProductSummary }) {
 
   return (
     <article className="group" onMouseLeave={() => setPicking(false)}>
-      <div className="relative aspect-[4/5] overflow-hidden bg-sand/40">
+      <div
+        className="relative aspect-[4/5] overflow-hidden bg-sand/40"
+        onTouchStart={(e) => (touchX.current = e.touches[0].clientX)}
+        onTouchEnd={(e) => {
+          if (touchX.current == null || !many) return
+          const dx = e.changedTouches[0].clientX - touchX.current
+          touchX.current = null
+          if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1)
+        }}
+      >
         <Link href={href} tabIndex={-1} aria-hidden="true">
           <img
-            src={image}
-            alt={product.alt}
+            src={current.url}
+            alt={current.alt}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-[1400ms] ease-out group-hover:scale-105"
           />
         </Link>
+
+        {many && (
+          <>
+            {(['prev', 'next'] as const).map((dir) => (
+              <button
+                key={dir}
+                type="button"
+                onClick={() => go(dir === 'next' ? 1 : -1)}
+                aria-label={`${dir === 'next' ? 'Foto siguiente' : 'Foto anterior'} de ${product.name}`}
+                className={`absolute top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-offwhite/85 text-washed-black shadow-sm transition-opacity duration-300 hover:bg-offwhite focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 ${
+                  dir === 'next' ? 'right-2' : 'left-2'
+                }`}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" aria-hidden="true">
+                  <path d={dir === 'next' ? 'M4.5 2l4 4-4 4' : 'M7.5 2l-4 4 4 4'} />
+                </svg>
+              </button>
+            ))}
+            <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center gap-1.5" aria-hidden="true">
+              {photos.map((p, i) => (
+                <span key={p.url + i} className={`h-1.5 w-1.5 rounded-full transition-colors ${i === photo % photos.length ? 'bg-washed-black/80' : 'bg-offwhite/80'}`} />
+              ))}
+            </div>
+            <span className="sr-only" aria-live="polite">
+              Foto {(photo % photos.length) + 1} de {photos.length}
+            </span>
+          </>
+        )}
 
         <div
           className={`absolute inset-x-3 bottom-3 transition-all duration-500 md:translate-y-3 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100 ${
@@ -83,7 +135,7 @@ export default function ProductCard({ product }: { product: ProductSummary }) {
           {product.colors.map((c) => (
             <li key={c.key}>
               <button
-                onClick={() => setColor(c)}
+                onClick={() => chooseColor(c)}
                 aria-label={`Color ${c.name}`}
                 aria-pressed={color.key === c.key}
                 className={`block h-3 w-3 rounded-full border transition-shadow ${
